@@ -12,8 +12,23 @@ void main(List<String> args) async {
   await build(args, (input, output) async {
     final packageName = input.packageName;
     final sourceDir = join(input.packageRoot.toFilePath(), 'src');
-    final libDir = join(sourceDir, 'lib');
-    final pdfLibSo = join(libDir, 'libpdfium.so');
+    String libDir = join(sourceDir, 'lib');
+    String pdfLibSo = join(libDir, 'libpdfium.so');
+
+    if (input.config.code.targetOS == .android) {
+      pdfLibSo = join(libDir, 'android_arm64/libpdfium.so');
+      libDir = join(libDir, 'android_arm64');
+      final libcxxPath = join(libDir, 'libc++_shared.so');
+
+      output.assets.code.add(
+        CodeAsset(
+          package: packageName,
+          name: 'libc++_shared.so',
+          linkMode: DynamicLoadingBundled(),
+          file: File(libcxxPath).uri,
+        ),
+      );
+    }
 
     final cbuilder = CBuilder.library(
       name: packageName,
@@ -24,7 +39,7 @@ void main(List<String> args) async {
         'src/ffi/pdf_page_wrapper.cpp',
         'src/pdf/pdf_core.cpp',
         'src/pdf/pdf_page.cpp',
-        'src/stbi_impl.cpp'
+        'src/stbi_impl.cpp',
       ],
       includes: [
         join(sourceDir, 'include'),
@@ -35,7 +50,10 @@ void main(List<String> args) async {
       flags: [
         '-L$libDir', // Linker ကို ဘယ် folder ထဲမှာ library ရှာရမလဲဆိုတာ ပြတာ
         '-lpdfium', // libpdfium.so ကို link လုပ်ခိုင်းတာ (lib နဲ့ .so ဖြုတ်ပြီး ရေးရပါတယ်)
-        '-Wl,-rpath,\$ORIGIN', // Runtime မှာ ကိုယ့်ဘေးနားက library ကို ရှာခိုင်းတာ
+        if (input.config.code.targetOS == .android)
+          '-static-libstdc++'
+        else
+          '-Wl,-rpath,\$ORIGIN', // Runtime မှာ ကိုယ့်ဘေးနားက library ကို ရှာခိုင်းတာ
         '-O3',
       ],
     );
@@ -55,19 +73,5 @@ void main(List<String> args) async {
         file: File(pdfLibSo).uri,
       ),
     );
-    // wrapper
-    // final wrapperPath = join(
-    //   input.packageRoot.toFilePath(),
-    //   'build',
-    //   'libpdf_engine_wrapper.so',
-    // );
-    // output.assets.code.add(
-    //   CodeAsset(
-    //     package: packageName,
-    //     name: 'libpdf_engine_wrapper.so',
-    //     linkMode: DynamicLoadingBundled(),
-    //     file: File(wrapperPath).uri,
-    //   ),
-    // );
   });
 }

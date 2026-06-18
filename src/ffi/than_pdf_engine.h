@@ -46,7 +46,8 @@ void* pdf_core_create();
 // ~PdfCore();
 void pdf_core_destroy(void* pdf_core_ptr);
 // bool openFile(const std::string& path, const std::string& password = "");
-bool pdf_core_openFile(void* pdf_core_ptr, const char* path,const char* password);
+bool pdf_core_openFile(void* pdf_core_ptr, const char* path,
+                       const char* password);
 // bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
 //                    const std::string& password = "");
 bool openMemoryRaw(void* pdf_core_ptr, const unsigned char* dataBuffer,
@@ -89,11 +90,12 @@ void pdf_page_destroy(void* pdf_page_ptr);
 uint8_t* pdf_page_getBitmapSourcePtr(void* pdf_page_ptr, int targetWidth,
                                      int targetHeight);
 // std::vector<uint8_t> renderToRGBA(float zoomFactor);
-uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, float zoomFactor,
-                               int* bufferSize);
-// std::vector<uint8_t> renderToJpeg(float zoomFactor, int quality = 90);
-uint8_t* pdf_page_renderToJpeg(void* pdf_page_ptr, float zoomFactor,
-                               int quality, int* bufferSize);
+uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, int* bufferSize,
+                               float zoomFactor);
+//  std::vector<uint8_t> renderToJpeg(int deviceWidth, float zoomFactor,
+// int quality = 90);
+uint8_t* pdf_page_renderToJpeg(void* pdf_page_ptr, int* bufferSize,
+                               int deviceWidth, float zoomFactor, int quality);
 // free render data
 void pdf_page_free_render_data(uint8_t* render_data_ptr);
 // bool saveAsPng(const std::string& outPath, float zoomFactor);
@@ -105,9 +107,19 @@ bool pdf_page_saveAsJpg(void* pdf_page_ptr, const char* outPath,
                         float zoomFactor, int quality);
 
 // int getRenderWith(float zoomFactor)
-int pdf_page_getRenderWith(void* pdf_page_ptr, float zoomFactor);
+int pdf_page_getRenderWidth(void* pdf_page_ptr, float zoomFactor);
 // int getRenderHeight(float zoomFactor)
 int pdf_page_getRenderHeight(void* pdf_page_ptr, float zoomFactor);
+
+// std::vector<uint8_t> renderToRGBAWithDeviceWidth(int deviceWidth,float
+// zoomFactor);
+uint8_t* pdf_page_renderToRGBAWithDeviceWidth(void* pdf_page_ptr,
+                                              int* bufferSize, int deviceWidth,
+                                              float targetHeight);
+// double getOriginalWidth();
+float pdf_page_getOriginalWidth(void* pdf_page_ptr);
+// double getOriginalHeight();
+float pdf_page_getOriginalHeight(void* pdf_page_ptr);
 
 //******************************************* */
 

@@ -31,3 +31,4 @@ migrate_working_dir/
 /coverage/
 build
 src/lib/libpdfium.so
+src/lib/android_arm64

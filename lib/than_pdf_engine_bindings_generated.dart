@@ -142,30 +142,33 @@ external ffi.Pointer<ffi.Uint8> pdf_page_getBitmapSourcePtr(
 @ffi.Native<
   ffi.Pointer<ffi.Uint8> Function(
     ffi.Pointer<ffi.Void>,
-    ffi.Float,
     ffi.Pointer<ffi.Int>,
+    ffi.Float,
   )
 >()
 external ffi.Pointer<ffi.Uint8> pdf_page_renderToRGBA(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
-  double zoomFactor,
   ffi.Pointer<ffi.Int> bufferSize,
+  double zoomFactor,
 );
 
-/// std::vector<uint8_t> renderToJpeg(float zoomFactor, int quality = 90);
+/// std::vector<uint8_t> renderToJpeg(int deviceWidth, float zoomFactor,
+/// int quality = 90);
 @ffi.Native<
   ffi.Pointer<ffi.Uint8> Function(
     ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Int>,
+    ffi.Int,
     ffi.Float,
     ffi.Int,
-    ffi.Pointer<ffi.Int>,
   )
 >()
 external ffi.Pointer<ffi.Uint8> pdf_page_renderToJpeg(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
+  ffi.Pointer<ffi.Int> bufferSize,
+  int deviceWidth,
   double zoomFactor,
   int quality,
-  ffi.Pointer<ffi.Int> bufferSize,
 );
 
 /// free render data
@@ -201,7 +204,7 @@ external bool pdf_page_saveAsJpg(
 
 /// int getRenderWith(float zoomFactor)
 @ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Float)>()
-external int pdf_page_getRenderWith(
+external int pdf_page_getRenderWidth(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
   double zoomFactor,
 );
@@ -212,6 +215,31 @@ external int pdf_page_getRenderHeight(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
   double zoomFactor,
 );
+
+/// std::vector<uint8_t> renderToRGBAWithDeviceWidth(int deviceWidth,float
+/// zoomFactor);
+@ffi.Native<
+  ffi.Pointer<ffi.Uint8> Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Int>,
+    ffi.Int,
+    ffi.Float,
+  )
+>()
+external ffi.Pointer<ffi.Uint8> pdf_page_renderToRGBAWithDeviceWidth(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  ffi.Pointer<ffi.Int> bufferSize,
+  int deviceWidth,
+  double zoomFactor,
+);
+
+/// double getOriginalWidth();
+@ffi.Native<ffi.Float Function(ffi.Pointer<ffi.Void>)>()
+external double pdf_page_getOriginalWidth(ffi.Pointer<ffi.Void> pdf_page_ptr);
+
+/// double getOriginalHeight();
+@ffi.Native<ffi.Float Function(ffi.Pointer<ffi.Void>)>()
+external double pdf_page_getOriginalHeight(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
 /// *******************PDF Core && PDF Page************************ */
 final class Page_Cache_Data extends ffi.Struct {

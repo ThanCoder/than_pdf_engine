@@ -6,6 +6,4 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
-
-export 'core/pdf_core.dart';
 export 'core/types.dart';

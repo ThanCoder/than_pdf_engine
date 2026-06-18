@@ -3,15 +3,19 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 class RgbaBytesViewer extends StatefulWidget {
-  final Uint8List rgbaBytes; // 💡 Pointer အစား Uint8List ကို တိုက်ရိုက်လက်ခံမယ်
-  final int width;
-  final int height;
+  final Uint8List rgbaBytes;
+  final double width; // UI Display Width (ဥပမာ ဖုန်း screen အပြည့်)
+  final double height; // UI Display Height (အချိုးကျ တွက်ထားသော height)
+  final int imageWidth; // 🎯 C++ က ထွက်လာတဲ့ Pixel Width အစစ်
+  final int imageHeight; // 🎯 C++ က ထွက်လာတဲ့ Pixel Height အစစ်
 
   const RgbaBytesViewer({
     super.key,
     required this.rgbaBytes,
     required this.width,
     required this.height,
+    required this.imageWidth,
+    required this.imageHeight,
   });
 
   @override
@@ -31,10 +35,11 @@ class _RgbaBytesViewerState extends State<RgbaBytesViewer> {
   @override
   void didUpdateWidget(covariant RgbaBytesViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Bytes array သို့မဟုတ် size ပြောင်းသွားရင် ပုံအသစ် ပြန်ဆွဲမယ်
+    // 💡 Layout Size (width/height) ပြောင်းရုံနဲ့ decode ထပ်မလုပ်တော့ဘူး (ဥပမာ- Zoom ဆွဲရင် သက်သာအောင်)
+    // ရုပ်ထွက် Byte array သို့မဟုတ် C++ Resolution အစစ် ပြောင်းမှသာ ပုံအသစ် ပြန်ဆွဲမယ်
     if (oldWidget.rgbaBytes != widget.rgbaBytes ||
-        oldWidget.width != widget.width ||
-        oldWidget.height != widget.height) {
+        oldWidget.imageWidth != widget.imageWidth ||
+        oldWidget.imageHeight != widget.imageHeight) {
       _decodeRgbaBytes();
     }
   }
@@ -51,13 +56,12 @@ class _RgbaBytesViewerState extends State<RgbaBytesViewer> {
     setState(() => _isLoading = true);
 
     try {
-      // Raw Bytes တွေကို Flutter GPU Texture (ui.Image) အဖြစ် ပြောင်းလဲခြင်း
+      // 🎯 [အဓိက ပြင်ဆင်ချက်] Widget layout size မဟုတ်ဘဲ C++ ရဲ့ Resolution အစစ်ကို ကျွေးရပါမယ်
       ui.decodeImageFromPixels(
         widget.rgbaBytes,
-        widget.width,
-        widget.height,
-        ui.PixelFormat.rgba8888, // RGBA Standard
-        // ui.PixelFormat.rgba8888,
+        widget.imageWidth, // 👈 ဥပမာ 1080
+        widget.imageHeight, // 👈 ဥပမာ 1920
+        ui.PixelFormat.rgba8888,
         (ui.Image image) {
           if (mounted) {
             setState(() {
@@ -85,18 +89,18 @@ class _RgbaBytesViewerState extends State<RgbaBytesViewer> {
       return const Center(child: Text('Render Failed'));
     }
 
-    // Engine အဆင့် RawImage နဲ့ ဆွဲတာမလို့ Performance အကောင်းဆုံး ဖြစ်ပါတယ်
+    // 💡 GPU ပေါ်က Raw Image ကိုမှ လက်ရှိ Layout အရွယ်အစားအတိုင်း အချိုးကျ ချုံ့/ချဲ့ ပြသပေးမယ်
     return RawImage(
       image: _uiImage,
-      width: widget.width.toDouble(),
-      height: widget.height.toDouble(),
+      width: widget.width,
+      height: widget.height,
       fit: BoxFit.contain,
     );
   }
 
   @override
   void dispose() {
-    _uiImage?.dispose(); // GPU Memory ရှင်းလင်းခြင်း
+    _uiImage?.dispose();
     super.dispose();
   }
 }

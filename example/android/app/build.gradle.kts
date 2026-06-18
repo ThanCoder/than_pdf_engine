@@ -23,6 +23,13 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        //externalNativeBuild {
+          // cmake {
+                // arguments.add("-DANDROID_STL=c++_shared") သို့မဟုတ် အောက်ကအတိုင်း ရေးပါ
+            //    arguments("-DANDROID_STL=c++_shared")
+            //}
+        //}
     }
 
     buildTypes {

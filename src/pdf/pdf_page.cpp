@@ -1,5 +1,7 @@
 #include "pdf_page.hpp"
 
+#include <stdexcept>
+
 #include "fpdfview.h"
 
 PdfPage::PdfPage(FPDF_DOCUMENT doc, FPDF_PAGE page) : doc(doc), page(page) {
@@ -89,30 +91,52 @@ void stbi_write_to_vector(void* context, void* data, int size) {
   vec->insert(vec->end(), bytes, bytes + size);
 }
 
-std::vector<uint8_t> PdfPage::renderToJpeg(float zoomFactor, int quality) {
+std::vector<uint8_t> PdfPage::renderToJpeg(int deviceWidth, float zoomFactor,
+                                           int quality) {
   std::vector<uint8_t> outputJpegData;
-
   if (!page) return outputJpegData;
 
-  // RGBA data (4 channels) ကို ရယူခြင်း
-  auto rgba_data = renderToRGBA(zoomFactor);
+  // ၁။ မူရင်း PDF ရဲ့ Width/Height အချိုးကို ရှာတယ်
+  double origWidth = getOriginalWidth();
+  double origHeight = getOriginalHeight();
+  if (origWidth <= 0 || origHeight <= 0) return outputJpegData;  // Safety Check
+
+  double aspectRatio = origHeight / origWidth;
+
+  // ၂။ Target Size ကို တွက်ချက်ခြင်း
+  int targetWidth = static_cast<int>(deviceWidth * zoomFactor);
+  int targetHeight = static_cast<int>(targetWidth * aspectRatio);
+
+  if (targetWidth <= 0 || targetHeight <= 0) return outputJpegData;
+
+  // ၃။ Target Size အတိုင်း RGBA ထုတ်ယူခြင်း
+  auto rgba_data = renderToRGBAWithDeviceWidth(targetWidth, targetHeight);
   if (rgba_data.empty()) return outputJpegData;
 
-  // 💡 [အရေးကြီးပြင်ဆင်ချက်] RGBA (4 channels) မှ RGB (3 channels) သို့ ပြောင်းလဲခြင်း
-  // ဘာလို့လဲဆိုတော့ JPEG က Alpha channel ကို support မလုပ်လို့ပါ
-  std::vector<uint8_t> rgb_data;
-  rgb_data.reserve(width * height * 3);  // Memory ကြိုတောင်းထားမယ်
+  // 💡 Safe Check: တကယ်ရလာတဲ့ Pixel အရေအတွက်ကိုပဲ အခြေခံပြီး တွက်ပါမယ်
+  // (ဒါမှ Memory Crash ဖြစ်တာကို ကာကွယ်နိုင်မှာပါ)
+  size_t total_pixels = rgba_data.size() / 4;
 
-  for (size_t i = 0; i < rgba_data.size(); i += 4) {
-    rgb_data.push_back(rgba_data[i]);      // R
-    rgb_data.push_back(rgba_data[i + 1]);  // G
-    rgb_data.push_back(rgba_data[i + 2]);  // B
-    // rgba_data[i + 3] (Alpha) ကို လစ်လျူရှုလိုက်ပါတယ်
+  // ၄။ RGBA မှ RGB သို့ စိတ်ချရစွာ ပြောင်းလဲခြင်း
+  std::vector<uint8_t> rgb_data;
+  try {
+    rgb_data.reserve(total_pixels * 3);
+  } catch (const std::length_error& e) {
+    // Memory မဆံ့ရင် Crash မဖြစ်စေဘဲ ဒီမှာတင် ရပ်လိုက်မယ်
+    return outputJpegData;
   }
 
-  // STB သို့ လှမ်းရေးခိုင်းခြင်း (Component နေရာမှာ JPEG ဖြစ်လို့ '3' ကိုပဲ သုံးရပါမယ်)
-  stbi_write_jpg_to_func(stbi_write_to_vector, &outputJpegData, width, height,
-                         3, rgb_data.data(), quality);
+  for (size_t i = 0; i < total_pixels; ++i) {
+    size_t rgba_idx = i * 4;
+    rgb_data.push_back(rgba_data[rgba_idx]);      // R
+    rgb_data.push_back(rgba_data[rgba_idx + 1]);  // G
+    rgb_data.push_back(rgba_data[rgba_idx + 2]);  // B
+  }
+
+  // ၅။ STB သို့ ကျွေးပြီး JPEG ပြောင်းခိုင်းမယ် 🎯
+  // 💡 targetWidth နဲ့ targetHeight နေရာမှာ တကယ်ရလာတဲ့ pixel data နဲ့ ကိုက်ညီအောင် သုံးထားပါတယ်
+  stbi_write_jpg_to_func(stbi_write_to_vector, &outputJpegData, targetWidth,
+                         targetHeight, 3, rgb_data.data(), quality);
 
   return outputJpegData;
 }
@@ -152,4 +176,70 @@ bool PdfPage::saveAsJpg(const std::string& outPath, float zoomFactor,
                                rgba_data.data(), stride_in_bytes);
 
   return success != 0;
+}
+
+double PdfPage::getOriginalWidth() { return FPDF_GetPageWidth(page); }
+
+double PdfPage::getOriginalHeight() { return FPDF_GetPageHeight(page); }
+
+// 💡 မင်းရဲ့ အိုင်ဒီယာအတိုင်း Flutter ကပေးတဲ့ Target Width ပေါ်မူတည်ပြီး Height ကို တွက်ပေးမယ့်နေရာ
+std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
+                                                          int targetHeight) {
+  std::vector<uint8_t> rgba_buffer;
+  if (!page || targetWidth <= 0 || targetHeight <= 0) return rgba_buffer;
+
+  // ၁။ PDFium Bitmap ကို ဆောက်ခြင်း (1 = FPDFBitmap_BGRA)
+  FPDF_BITMAP bitmap = FPDFBitmap_Create(targetWidth, targetHeight, 1);
+  if (!bitmap) return rgba_buffer;  // Bitmap ဆောက်လို့မရရင် လှည့်ပြန်မယ်
+
+  // Background ကို အဖြူရောင် Clear လုပ်ပေးခြင်း
+  FPDFBitmap_FillRect(bitmap, 0, 0, targetWidth, targetHeight, 0xFFFFFFFF);
+
+  // PDF စာမျက်နှာကို Bitmap ပေါ် ရင်ဒါဆွဲခိုင်းခြင်း
+  FPDF_RenderPageBitmap(bitmap, page, 0, 0, targetWidth, targetHeight, 0, 0);
+
+  std::uint8_t* source_buffer =
+      static_cast<std::uint8_t*>(FPDFBitmap_GetBuffer(bitmap));
+  int stride = FPDFBitmap_GetStride(bitmap);
+
+  // 💡 Safe Check: Memory size overflow မဖြစ်အောင် အရင်ကာကွယ်မယ်
+  size_t required_size =
+      static_cast<size_t>(targetWidth) * static_cast<size_t>(targetHeight) * 4;
+  try {
+    rgba_buffer.resize(required_size);
+  } catch (const std::length_error& e) {
+    FPDFBitmap_Destroy(bitmap);  // Crash မဖြစ်ခင် bitmap ကို အရင်ဖျက်ပေးရမယ်
+    return rgba_buffer;
+  }
+
+  // ၂။ Loop ပတ်ပြီး BGRA ကနေ RGBA ပြောင်းလဲခြင်း Logic 🎯
+  for (int y = 0; y < targetHeight; ++y) {
+    uint8_t* src_row = source_buffer + (y * stride);
+    uint8_t* dst_row = rgba_buffer.data() + (y * targetWidth * 4);
+
+    for (int x = 0; x < targetWidth; ++x) {
+      int src_idx = x * 4;
+      int dst_idx = x * 4;
+
+      // 💡 SAFETY FIRST: သတ်မှတ်ထားတဲ့ stride ထက် ကျော်မသွားကြောင်း သေချာမှ ဖတ်မယ်
+      if (src_idx + 3 < stride) {
+        dst_row[dst_idx + 0] = src_row[src_idx + 2];  // R = B
+        dst_row[dst_idx + 1] = src_row[src_idx + 1];  // G = G
+        dst_row[dst_idx + 2] = src_row[src_idx + 0];  // B = R
+        dst_row[dst_idx + 3] = src_row[src_idx + 3];  // A = A
+      } else {
+        // တကယ်လို့ stride ထက် ကျော်နေရင် Safe ဖြစ်အောင် Transparent သို့မဟုတ် အဖြူရောင်
+        // ထည့်ပေးထားမယ်
+        dst_row[dst_idx + 0] = 255;
+        dst_row[dst_idx + 1] = 255;
+        dst_row[dst_idx + 2] = 255;
+        dst_row[dst_idx + 3] = 255;
+      }
+    }
+  }
+
+  // သုံးပြီးသား bitmap pointer ကို သေချာဖျက်ပေးခြင်း
+  FPDFBitmap_Destroy(bitmap);
+
+  return rgba_buffer;
 }

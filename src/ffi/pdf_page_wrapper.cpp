@@ -26,8 +26,8 @@ uint8_t* pdf_page_getBitmapSourcePtr(void* pdf_page_ptr, int targetWidth,
   return page->getBitmapSourcePtr(targetWidth, targetHeight);
 }
 // std::vector<uint8_t> renderToRGBA(float zoomFactor);
-uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, float zoomFactor,
-                               int* bufferSize) {
+uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, int* bufferSize,
+                               float zoomFactor) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (page == nullptr) return nullptr;
   auto vec = page->renderToRGBA(zoomFactor);
@@ -41,8 +41,20 @@ uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, float zoomFactor,
   return buff;
 }
 // std::vector<uint8_t> renderToJpeg(float zoomFactor, int quality = 90);
-uint8_t* pdf_page_renderToJpeg(void* pdf_page_ptr, float zoomFactor,
-                               int quality, int* out_size) {}
+uint8_t* pdf_page_renderToJpeg(void* pdf_page_ptr, int* bufferSize,
+                               int deviceWidth, float zoomFactor, int quality) {
+  auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
+  if (page == nullptr) return nullptr;
+  auto vec = page->renderToJpeg(deviceWidth, zoomFactor, quality);
+  if (vec.empty()) return nullptr;
+
+  *bufferSize = vec.size();
+
+  auto buff = new uint8_t[vec.size()];
+  std::memcpy(buff, vec.data(), vec.size());
+
+  return buff;
+}
 // free render data
 void pdf_page_free_render_data(uint8_t* render_data_ptr) {
   if (render_data_ptr == nullptr) return;
@@ -65,7 +77,7 @@ bool pdf_page_saveAsJpg(void* pdf_page_ptr, const char* outPath,
 }
 
 // int getRenderWith(float zoomFactor)
-int pdf_page_getRenderWith(void* pdf_page_ptr, float zoomFactor) {
+int pdf_page_getRenderWidth(void* pdf_page_ptr, float zoomFactor) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (page == nullptr) return 0;
   return page->getRenderWith(zoomFactor);
@@ -75,4 +87,34 @@ int pdf_page_getRenderHeight(void* pdf_page_ptr, float zoomFactor) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (page == nullptr) return 0;
   return page->getRenderHeight(zoomFactor);
+}
+
+// std::vector<uint8_t> renderToRGBAWithDeviceWidth(int deviceWidth,float
+// zoomFactor);
+uint8_t* pdf_page_renderToRGBAWithDeviceWidth(void* pdf_page_ptr,
+                                              int* bufferSize, int deviceWidth,
+                                              float targetHeight) {
+  auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
+  if (page == nullptr) return nullptr;
+  auto vec = page->renderToRGBAWithDeviceWidth(deviceWidth, targetHeight);
+  if (vec.empty()) return nullptr;
+
+  *bufferSize = vec.size();
+
+  auto buff = new uint8_t[vec.size()];
+  std::memcpy(buff, vec.data(), vec.size());
+
+  return buff;
+}
+// double getOriginalWidth();
+float pdf_page_getOriginalWidth(void* pdf_page_ptr) {
+  auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
+  if (page == nullptr) return 0;
+  return page->getOriginalWidth();
+}
+// double getOriginalHeight();
+float pdf_page_getOriginalHeight(void* pdf_page_ptr) {
+  auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
+  if (page == nullptr) return 0;
+  return page->getOriginalHeight();
 }
