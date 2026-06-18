@@ -6,14 +6,12 @@
 
 #include "fpdfview.h"
 #include "pdf_core.hpp"
-#include "pdf_page.hpp"
-
-int sum_ffi(int a, int b) { return a + b; }
 
 //  PdfCore();
 void* pdf_core_create() { return new PdfCore(); }
 // FPDF_DestroyLibrary
 void pdfium_destroy() { FPDF_DestroyLibrary(); }
+void pdfium_init() { FPDF_InitLibrary(); }
 
 void pdf_core_destroy(void* pdf_core_ptr) {
   auto pdf = reinterpret_cast<PdfCore*>(pdf_core_ptr);
@@ -21,11 +19,12 @@ void pdf_core_destroy(void* pdf_core_ptr) {
   delete pdf;
 }
 // bool openFile(const std::string& path, const std::string& password = "");
-bool pdf_core_openFile(void* pdf_core_ptr, const char* path, const char*,
+bool pdf_core_openFile(void* pdf_core_ptr, const char* path,
                        const char* password) {
   auto pdf = reinterpret_cast<PdfCore*>(pdf_core_ptr);
   if (pdf == nullptr) return false;
-  pdf->openFile(path, password);
+  auto pwd = password == nullptr ? "" : password;
+  pdf->openFile(path, pwd);
   return true;
 }
 // bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
@@ -34,7 +33,8 @@ bool openMemoryRaw(void* pdf_core_ptr, const unsigned char* dataBuffer,
                    int dataSize, const char* password) {
   auto pdf = reinterpret_cast<PdfCore*>(pdf_core_ptr);
   if (pdf == nullptr) return false;
-  pdf->openMemoryRaw(dataBuffer, dataSize);
+  auto pwd = password == nullptr ? "" : password;
+  pdf->openMemoryRaw(dataBuffer, dataSize, pwd);
   return true;
 }
 
@@ -44,7 +44,8 @@ bool openMemory64Raw(void* pdf_core_ptr, const unsigned char* dataBuffer,
                      int dataSize, const char* password) {
   auto pdf = reinterpret_cast<PdfCore*>(pdf_core_ptr);
   if (pdf == nullptr) return false;
-  pdf->openMemoryRaw(dataBuffer, dataSize);
+  auto pwd = password == nullptr ? "" : password;
+  pdf->openMemoryRaw(dataBuffer, dataSize, pwd);
   return true;
 }
 
@@ -76,6 +77,14 @@ Page_Size_Data* pdf_core_getAllPageSizes(void* pdf_core_ptr) {
   // ၄။ အဲဒီ Array ရဲ့ အစဦးဆုံး Pointer ကို Dart FFI ဆီ လွှဲပေးလိုက်မယ်
   return cSizes;
 }
+
+void pdf_core_free_pageSizes(void* page_size_data_ptr) {
+  auto val = reinterpret_cast<Page_Size_Data*>(page_size_data_ptr);
+
+  if (val == nullptr) return;
+  delete[] val;
+}
+
 // std::vector<PageCacheData> getPagesFromCacheRGBA(float zoomFactor,int
 // startIndex, int endIndex);
 Page_Cache_Data* pdf_core_getPagesFromCacheRGBA(void* pdf_core_ptr,

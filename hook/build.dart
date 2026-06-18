@@ -11,15 +11,33 @@ import 'package:path/path.dart';
 void main(List<String> args) async {
   await build(args, (input, output) async {
     final packageName = input.packageName;
-    final sourceDir = join(input.packageRoot.toFilePath(),'src');
-    final pdfLibSo = join(sourceDir, 'lib', 'libpdfium.so');
+    final sourceDir = join(input.packageRoot.toFilePath(), 'src');
+    final libDir = join(sourceDir, 'lib');
+    final pdfLibSo = join(libDir, 'libpdfium.so');
 
     final cbuilder = CBuilder.library(
       name: packageName,
       language: .cpp,
       assetName: '${packageName}_bindings_generated.dart',
-      sources: ['src/ffi/$packageName.cpp'],
-      includes: [join(sourceDir, 'include')],
+      sources: [
+        'src/ffi/than_pdf_engine.cpp',
+        'src/ffi/pdf_page_wrapper.cpp',
+        'src/pdf/pdf_core.cpp',
+        'src/pdf/pdf_page.cpp',
+        'src/stbi_impl.cpp'
+      ],
+      includes: [
+        join(sourceDir, 'include'),
+        join(sourceDir, 'ffi'),
+        join(sourceDir, 'pdf'),
+      ],
+
+      flags: [
+        '-L$libDir', // Linker ကို ဘယ် folder ထဲမှာ library ရှာရမလဲဆိုတာ ပြတာ
+        '-lpdfium', // libpdfium.so ကို link လုပ်ခိုင်းတာ (lib နဲ့ .so ဖြုတ်ပြီး ရေးရပါတယ်)
+        '-Wl,-rpath,\$ORIGIN', // Runtime မှာ ကိုယ့်ဘေးနားက library ကို ရှာခိုင်းတာ
+        '-O3',
+      ],
     );
     await cbuilder.run(
       input: input,
@@ -37,5 +55,19 @@ void main(List<String> args) async {
         file: File(pdfLibSo).uri,
       ),
     );
+    // wrapper
+    // final wrapperPath = join(
+    //   input.packageRoot.toFilePath(),
+    //   'build',
+    //   'libpdf_engine_wrapper.so',
+    // );
+    // output.assets.code.add(
+    //   CodeAsset(
+    //     package: packageName,
+    //     name: 'libpdf_engine_wrapper.so',
+    //     linkMode: DynamicLoadingBundled(),
+    //     file: File(wrapperPath).uri,
+    //   ),
+    // );
   });
 }

@@ -20,30 +20,25 @@ PdfPage::~PdfPage() {
     current_bitmap = nullptr;
   }
 }
-
-std::uint8_t* PdfPage::getBitmapSourcePtr(float zoomFactor) {
+std::uint8_t* PdfPage::getBitmapSourcePtr(int targetWidth, int targetHeight) {
+  // နဂိုရှိပြီးသား bitmap ကို ဖျက်မယ်
   if (current_bitmap) {
     FPDFBitmap_Destroy(current_bitmap);
     current_bitmap = nullptr;
   }
 
-  int targetWidth = getRenderWith(zoomFactor);
-  int targetHeight = getRenderHeight(zoomFactor);
-
+  // အပြင်က ပေးလိုက်တဲ့ targetWidth, targetHeight အတိုင်း တိုက်ရိုက်ဆောက်မယ်
   current_bitmap = FPDFBitmap_Create(targetWidth, targetHeight, 1);
   if (!current_bitmap) return nullptr;
 
   FPDFBitmap_FillRect(current_bitmap, 0, 0, targetWidth, targetHeight,
                       0xFFFFFFFF);
 
-  // 💡 စာလုံးတင်မကဘဲ PDF ထဲက ပုံတွေပါ အကြည်ဆုံး Quality နဲ့ ဆွဲပေးဖို့ Flag အသစ်တွေ ပေါင်းထည့်လိုက်ပါတယ်
   int renderFlags = FPDF_LCD_TEXT | FPDF_RENDER_FORCEHALFTONE | FPDF_ANNOT;
 
-  // Render လုပ်တဲ့အခါ ဒီ Flags တွေကို ထည့်ပေးရပါမယ်
   FPDF_RenderPageBitmap(current_bitmap, page, 0, 0, targetWidth, targetHeight,
                         0, renderFlags);
 
-  // Buffer Pointer ကို ပြန်ပေးမယ် (Destruction မလုပ်တော့လို့ Pointer က သုံးလို့ရနေပါပြီ)
   return static_cast<uint8_t*>(FPDFBitmap_GetBuffer(current_bitmap));
 }
 
@@ -55,29 +50,30 @@ std::vector<uint8_t> PdfPage::renderToRGBA(float zoomFactor) {
   int targetWidth = getRenderWith(zoomFactor);
   int targetHeight = getRenderHeight(zoomFactor);
 
-  std::uint8_t* source_buffer = getBitmapSourcePtr(zoomFactor);
+  std::uint8_t* source_buffer = getBitmapSourcePtr(targetWidth, targetHeight);
   if (!source_buffer) return rgba_buffer;
 
-  // 💡 [အရေးကြီး] current_bitmap ဆောက်စဉ်က FPDFBitmap_BGRA (1) နဲ့ ဆောက်ထားမှ
-  // ဒီ Stride နဲ့ (x * 4) တွက်ချက်မှုက ကွက်တိမှန်မှာ ဖြစ်ပါတယ်
   int stride = FPDFBitmap_GetStride(current_bitmap);
-
   rgba_buffer.resize(targetWidth * targetHeight * 4);
 
   for (int y = 0; y < targetHeight; ++y) {
-    // Row တစ်ခုချင်းစီရဲ့ အစ Pointer ကို ယူလိုက်တာက ပိုမြန်ပြီး စိတ်ချရပါတယ်
+    // 💡 Stride အတိုင်း Row pointer ကို တွက်ချက်တာ မှန်ကန်ပါတယ်
     uint8_t* src_row = source_buffer + (y * stride);
     uint8_t* dst_row = rgba_buffer.data() + (y * targetWidth * 4);
 
     for (int x = 0; x < targetWidth; ++x) {
+      // 💡 ဒီနေရာမှာ x * 4 က stride ထက် ကျော်မသွားဖို့ လိုပါတယ်
       int src_x = x * 4;
       int dst_x = x * 4;
 
-      // BGRA -> RGBA ပြောင်းလဲခြင်း
-      dst_row[dst_x + 0] = src_row[src_x + 2];  // R
-      dst_row[dst_x + 1] = src_row[src_x + 1];  // G
-      dst_row[dst_x + 2] = src_row[src_x + 0];  // B
-      dst_row[dst_x + 3] = src_row[src_x + 3];  // A
+      // တကယ်လို့ stride ထဲမှာ data က ကွက်တိမရှိရင် targetWidth ထက် ကျော်ပြီး read မိနိုင်ခြေ ရှိ/မရှိ
+      // စစ်ဆေးပါ
+      if (src_x + 3 < stride) {
+        dst_row[dst_x + 0] = src_row[src_x + 2];  // R
+        dst_row[dst_x + 1] = src_row[src_x + 1];  // G
+        dst_row[dst_x + 2] = src_row[src_x + 0];  // B
+        dst_row[dst_x + 3] = src_row[src_x + 3];  // A
+      }
     }
   }
 
@@ -122,28 +118,38 @@ std::vector<uint8_t> PdfPage::renderToJpeg(float zoomFactor, int quality) {
 }
 
 bool PdfPage::saveAsPng(const std::string& outPath, float zoomFactor) {
-  // RGBA data ကို ယူမယ်
+  // ၁။ target width နဲ့ height ကို အရင်တွက်မယ်
+  int targetWidth = getRenderWith(zoomFactor);
+  int targetHeight = getRenderHeight(zoomFactor);
+
+  // ၂။ RGBA data ကို ယူမယ်
   auto rgba_data = renderToRGBA(zoomFactor);
   if (rgba_data.empty()) return false;
 
-  // stbi_write_png ကို သုံးပြီး ဖိုင်အဖြစ် တိုက်ရိုက်သိမ်းမယ်
-  // (RGBA ဖြစ်လို့ component နေရာမှာ 4 သုံးပါတယ်)
-  int success = stbi_write_png(outPath.c_str(), width, height, 4,
-                               rgba_data.data(), width * 4);
+  // 💡 ၃။ stride_in_bytes နေရာမှာ (targetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
+  int stride_in_bytes = targetWidth * 4;
+
+  int success = stbi_write_png(outPath.c_str(), targetWidth, targetHeight, 4,
+                               rgba_data.data(), stride_in_bytes);
 
   return success != 0;
 }
 
 bool PdfPage::saveAsJpg(const std::string& outPath, float zoomFactor,
                         int quality) {
-  // RGBA data ကို ယူမယ်
+  // ၁။ target width နဲ့ height ကို အရင်တွက်မယ်
+  int targetWidth = getRenderWith(zoomFactor);
+  int targetHeight = getRenderHeight(zoomFactor);
+
+  // ၂။ RGBA data ကို ယူမယ်
   auto rgba_data = renderToRGBA(zoomFactor);
   if (rgba_data.empty()) return false;
 
-  // stbi_write_png ကို သုံးပြီး ဖိုင်အဖြစ် တိုက်ရိုက်သိမ်းမယ်
-  // (RGBA ဖြစ်လို့ component နေရာမှာ 4 သုံးပါတယ်)
-  int success = stbi_write_jpg(outPath.c_str(), width, height, 4,
-                               rgba_data.data(), width * 4);
+  // 💡 ၃။ stride_in_bytes နေရာမှာ (targetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
+  int stride_in_bytes = targetWidth * 4;
+
+  int success = stbi_write_jpg(outPath.c_str(), targetWidth, targetHeight, 4,
+                               rgba_data.data(), stride_in_bytes);
 
   return success != 0;
 }

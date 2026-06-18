@@ -8,7 +8,6 @@
 #include "pdf/pdf_core.hpp"
 
 extern "C" {
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <fpdfview.h>
 #include <stb_image_write.h>
 }
@@ -115,23 +114,30 @@ int main() {
   std::cout << "page count: " << pdf.getPageCount() << "\n";
 
   auto page = pdf.getPage(1);
-  auto sizes = pdf.getAllPageSizes();
+  // auto sizes = pdf.getAllPageSizes();
+  // std::cout << "sizes: " << sizes.size() << "\n";
 
-  std::cout << "sizes: "<< sizes.size() << "\n";
-  // float zoom = 1.5;
+  // auto caches = pdf.getPagesFromCacheRGBA(0.1, 0, 828);
+  // std::cout << "cache size: " << caches.size() << "\n";
+
+  // size_t totalBytes = 0;
+
+  // // cache တစ်ခုချင်းစီရဲ့ vector size ကို ပေါင်းပေးတာပါ
+  // for (const auto& cache : caches) {
+  //   totalBytes += cache.rgbaData.size();
+  // }
+
+  // // Bytes ကနေ MB ပြောင်းခြင်း (Binary MB = 1024 * 1024)
+  // double totalMB = static_cast<double>(totalBytes) / (1024 * 1024);
+
+  // std::cout << "Total Bytes: " << totalBytes << " bytes\n";
+  // std::cout << "Total Cache Size: " << totalMB << " MB\n";
+
+  // page.saveAsPng("../test.png", 0.2);
+  // page.saveAsPng("../test.jpg", 0.2);
+  // float zoom = 0.2;
   // auto buff = page.renderToRGBA(zoom);
   // showRGBAImage(buff, page.getRenderWith(zoom), page.getRenderHeight(zoom));
-
-  // if (!page.saveAsPng("../1.png", 1)) {
-  //   return 1;
-  // }
-  // page.renderToRGBA()
-  // auto buff = page.renderToJpeg(0.2);
-  // saveBuffer(buff, "../save_buff.jpg");
-
-  // if (!page.saveAsJpg("../1.jpg", 1)) {
-  //   return 1;
-  // }
 
   return 0;
 }

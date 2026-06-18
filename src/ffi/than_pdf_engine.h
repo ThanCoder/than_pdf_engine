@@ -1,7 +1,6 @@
-#include <stdint.h>
+#include <stdbool.h>  // 💡 [ဒီကောင်လေး ထပ်ဖြည့်ပေးပါ] bool ကို နားလည်စေရန်
+#include <stdint.h>   // uint8_t ကို နားလည်စေရန်
 #include <stdlib.h>
-
-#include <cstdint>
 
 #if _WIN32
 #include <windows.h>
@@ -38,14 +37,16 @@ typedef struct {
   float height;
 } Page_Size_Data;
 
+// pdfium
+void pdfium_init();
+
 //  PdfCore();
 void* pdf_core_create();
 
 // ~PdfCore();
 void pdf_core_destroy(void* pdf_core_ptr);
 // bool openFile(const std::string& path, const std::string& password = "");
-bool pdf_core_openFile(void* pdf_core_ptr, const char* path, const char*,
-                       const char* password);
+bool pdf_core_openFile(void* pdf_core_ptr, const char* path,const char* password);
 // bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
 //                    const std::string& password = "");
 bool openMemoryRaw(void* pdf_core_ptr, const unsigned char* dataBuffer,
@@ -60,6 +61,7 @@ bool openMemory64Raw(void* pdf_core_ptr, const unsigned char* dataBuffer,
 int pdf_core_getPageCount(void* pdf_core_ptr);
 // std::vector<PageSizeData> getAllPageSizes();
 Page_Size_Data* pdf_core_getAllPageSizes(void* pdf_core_ptr);
+void pdf_core_free_pageSizes(void* page_size_data_ptr);
 // std::vector<PageCacheData> getPagesFromCacheRGBA(float zoomFactor,int
 // startIndex, int endIndex);
 Page_Cache_Data* pdf_core_getPagesFromCacheRGBA(void* pdf_core_ptr,
@@ -79,19 +81,21 @@ void* pdf_core_getPage(void* pdf_core_ptr, int pageIndex);
 
 // PdfPage(FPDF_DOCUMENT doc = nullptr, FPDF_PAGE page =
 // nullptr);
-void* pdf_page_create(void* document, void* page);
+void* pdf_page_create_from_page_index(void* document, int pageIndex);
 //  ~PdfPage();
 void pdf_page_destroy(void* pdf_page_ptr);
 
 // std::uint8_t* getBitmapSourcePtr(float zoomFactor);
-uint8_t* pdf_page_getBitmapSourcePtr(void* pdf_page_ptr, float zoomFactor);
+uint8_t* pdf_page_getBitmapSourcePtr(void* pdf_page_ptr, int targetWidth,
+                                     int targetHeight);
 // std::vector<uint8_t> renderToRGBA(float zoomFactor);
-uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, float zoomFactor);
+uint8_t* pdf_page_renderToRGBA(void* pdf_page_ptr, float zoomFactor,
+                               int* bufferSize);
 // std::vector<uint8_t> renderToJpeg(float zoomFactor, int quality = 90);
 uint8_t* pdf_page_renderToJpeg(void* pdf_page_ptr, float zoomFactor,
-                               int quality, int* out_size);
-// free render
-void pdf_page_free_render_data(void* pdf_page_ptr, uint8_t* render_data_ptr);
+                               int quality, int* bufferSize);
+// free render data
+void pdf_page_free_render_data(uint8_t* render_data_ptr);
 // bool saveAsPng(const std::string& outPath, float zoomFactor);
 bool pdf_page_saveAsPng(void* pdf_page_ptr, const char* outPath,
                         float zoomFactor);
@@ -101,9 +105,9 @@ bool pdf_page_saveAsJpg(void* pdf_page_ptr, const char* outPath,
                         float zoomFactor, int quality);
 
 // int getRenderWith(float zoomFactor)
-int getRenderWith(void* pdf_page_ptr, float zoomFactor);
+int pdf_page_getRenderWith(void* pdf_page_ptr, float zoomFactor);
 // int getRenderHeight(float zoomFactor)
-int getRenderHeight(void* pdf_page_ptr, float zoomFactor);
+int pdf_page_getRenderHeight(void* pdf_page_ptr, float zoomFactor);
 
 //******************************************* */
 

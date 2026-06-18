@@ -4,5 +4,236 @@
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Int)>()
-external int sum_ffi(int a, int b);
+/// FPDF_DestroyLibrary()
+@ffi.Native<ffi.Void Function()>()
+external void pdfium_destroy();
+
+/// pdfium
+@ffi.Native<ffi.Void Function()>()
+external void pdfium_init();
+
+/// PdfCore();
+@ffi.Native<ffi.Pointer<ffi.Void> Function()>()
+external ffi.Pointer<ffi.Void> pdf_core_create();
+
+/// ~PdfCore();
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void pdf_core_destroy(ffi.Pointer<ffi.Void> pdf_core_ptr);
+
+/// bool openFile(const std::string& path, const std::string& password = "");
+@ffi.Native<
+  ffi.Bool Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external bool pdf_core_openFile(
+  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  ffi.Pointer<ffi.Char> path,
+  ffi.Pointer<ffi.Char> password,
+);
+
+/// bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
+/// const std::string& password = "");
+@ffi.Native<
+  ffi.Bool Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.UnsignedChar>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external bool openMemoryRaw(
+  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  ffi.Pointer<ffi.UnsignedChar> dataBuffer,
+  int dataSize,
+  ffi.Pointer<ffi.Char> password,
+);
+
+/// bool openMemory64Raw(const unsigned char* dataBuffer, int dataSize,
+/// const std::string& password = "");
+@ffi.Native<
+  ffi.Bool Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.UnsignedChar>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external bool openMemory64Raw(
+  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  ffi.Pointer<ffi.UnsignedChar> dataBuffer,
+  int dataSize,
+  ffi.Pointer<ffi.Char> password,
+);
+
+/// int getPageCount();
+@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>)>()
+external int pdf_core_getPageCount(ffi.Pointer<ffi.Void> pdf_core_ptr);
+
+/// std::vector<PageSizeData> getAllPageSizes();
+@ffi.Native<ffi.Pointer<Page_Size_Data> Function(ffi.Pointer<ffi.Void>)>()
+external ffi.Pointer<Page_Size_Data> pdf_core_getAllPageSizes(
+  ffi.Pointer<ffi.Void> pdf_core_ptr,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void pdf_core_free_pageSizes(ffi.Pointer<ffi.Void> page_size_data_ptr);
+
+/// std::vector<PageCacheData> getPagesFromCacheRGBA(float zoomFactor,int
+/// startIndex, int endIndex);
+@ffi.Native<
+  ffi.Pointer<Page_Cache_Data> Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Float,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Int>,
+  )
+>()
+external ffi.Pointer<Page_Cache_Data> pdf_core_getPagesFromCacheRGBA(
+  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  double zoomFactor,
+  int startIndex,
+  int endIndex,
+  ffi.Pointer<ffi.Int> genCacheCount,
+);
+
+/// need to free
+@ffi.Native<ffi.Void Function(ffi.Pointer<Page_Cache_Data>, ffi.Int)>()
+external void pdf_core_free_CacheRGBAData(
+  ffi.Pointer<Page_Cache_Data> page_cache_data_ptr,
+  int genCacheCount,
+);
+
+/// PdfPage getPage(int pageIndex);
+///
+/// return `pdf_page_ptr`
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> pdf_core_getPage(
+  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  int pageIndex,
+);
+
+/// PdfPage(FPDF_DOCUMENT doc = nullptr, FPDF_PAGE page =
+/// nullptr);
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> pdf_page_create_from_page_index(
+  ffi.Pointer<ffi.Void> document,
+  int pageIndex,
+);
+
+/// ~PdfPage();
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void pdf_page_destroy(ffi.Pointer<ffi.Void> pdf_page_ptr);
+
+/// std::uint8_t* getBitmapSourcePtr(float zoomFactor);
+@ffi.Native<
+  ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Void>, ffi.Int, ffi.Int)
+>()
+external ffi.Pointer<ffi.Uint8> pdf_page_getBitmapSourcePtr(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  int targetWidth,
+  int targetHeight,
+);
+
+/// std::vector<uint8_t> renderToRGBA(float zoomFactor);
+@ffi.Native<
+  ffi.Pointer<ffi.Uint8> Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Float,
+    ffi.Pointer<ffi.Int>,
+  )
+>()
+external ffi.Pointer<ffi.Uint8> pdf_page_renderToRGBA(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  double zoomFactor,
+  ffi.Pointer<ffi.Int> bufferSize,
+);
+
+/// std::vector<uint8_t> renderToJpeg(float zoomFactor, int quality = 90);
+@ffi.Native<
+  ffi.Pointer<ffi.Uint8> Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Float,
+    ffi.Int,
+    ffi.Pointer<ffi.Int>,
+  )
+>()
+external ffi.Pointer<ffi.Uint8> pdf_page_renderToJpeg(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  double zoomFactor,
+  int quality,
+  ffi.Pointer<ffi.Int> bufferSize,
+);
+
+/// free render data
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>()
+external void pdf_page_free_render_data(ffi.Pointer<ffi.Uint8> render_data_ptr);
+
+/// bool saveAsPng(const std::string& outPath, float zoomFactor);
+@ffi.Native<
+  ffi.Bool Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Float)
+>()
+external bool pdf_page_saveAsPng(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  ffi.Pointer<ffi.Char> outPath,
+  double zoomFactor,
+);
+
+/// bool saveAsJpg(const std::string& outPath, float zoomFactor, int quality
+/// =90);
+@ffi.Native<
+  ffi.Bool Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Float,
+    ffi.Int,
+  )
+>()
+external bool pdf_page_saveAsJpg(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  ffi.Pointer<ffi.Char> outPath,
+  double zoomFactor,
+  int quality,
+);
+
+/// int getRenderWith(float zoomFactor)
+@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Float)>()
+external int pdf_page_getRenderWith(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  double zoomFactor,
+);
+
+/// int getRenderHeight(float zoomFactor)
+@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Float)>()
+external int pdf_page_getRenderHeight(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  double zoomFactor,
+);
+
+/// *******************PDF Core && PDF Page************************ */
+final class Page_Cache_Data extends ffi.Struct {
+  @ffi.Int()
+  external int pageIndex;
+
+  @ffi.Int()
+  external int width;
+
+  @ffi.Int()
+  external int height;
+
+  @ffi.Int()
+  external int dataLength;
+
+  external ffi.Pointer<ffi.Uint8> rgbaData;
+}
+
+final class Page_Size_Data extends ffi.Struct {
+  @ffi.Float()
+  external double width;
+
+  @ffi.Float()
+  external double height;
+}
