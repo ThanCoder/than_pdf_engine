@@ -230,7 +230,7 @@ external ffi.Pointer<ffi.Uint8> pdf_page_renderToRGBAWithDeviceWidth(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
   ffi.Pointer<ffi.Int> bufferSize,
   int deviceWidth,
-  double zoomFactor,
+  double targetHeight,
 );
 
 /// double getOriginalWidth();

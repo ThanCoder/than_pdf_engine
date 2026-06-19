@@ -13,6 +13,7 @@ dependencies:
   native_toolchain_c: ^0.17.4
   ffi: ^2.1.4
   path: ^1.9.1
+  archive: ^4.0.9
 
 dev_dependencies:
   ffigen: ^20.1.1

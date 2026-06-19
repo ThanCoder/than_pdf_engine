@@ -30,5 +30,7 @@ migrate_working_dir/
 /build/
 /coverage/
 build
-src/lib/libpdfium.so
-src/lib/android_arm64
+src/dist_binaries
+src/lib/android/arm64-v8a/*.so
+src/lib/android/armeabi-v7a/*.so
+src/lib/linux/x64/*.so
