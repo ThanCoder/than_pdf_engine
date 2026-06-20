@@ -44,44 +44,6 @@ std::uint8_t* PdfPage::getBitmapSourcePtr(int targetWidth, int targetHeight) {
   return static_cast<uint8_t*>(FPDFBitmap_GetBuffer(current_bitmap));
 }
 
-std::vector<uint8_t> PdfPage::renderToRGBA(float zoomFactor) {
-  std::vector<uint8_t> rgba_buffer;
-
-  if (!page) return rgba_buffer;
-
-  int targetWidth = getRenderWith(zoomFactor);
-  int targetHeight = getRenderHeight(zoomFactor);
-
-  std::uint8_t* source_buffer = getBitmapSourcePtr(targetWidth, targetHeight);
-  if (!source_buffer) return rgba_buffer;
-
-  int stride = FPDFBitmap_GetStride(current_bitmap);
-  rgba_buffer.resize(targetWidth * targetHeight * 4);
-
-  for (int y = 0; y < targetHeight; ++y) {
-    // 💡 Stride အတိုင်း Row pointer ကို တွက်ချက်တာ မှန်ကန်ပါတယ်
-    uint8_t* src_row = source_buffer + (y * stride);
-    uint8_t* dst_row = rgba_buffer.data() + (y * targetWidth * 4);
-
-    for (int x = 0; x < targetWidth; ++x) {
-      // 💡 ဒီနေရာမှာ x * 4 က stride ထက် ကျော်မသွားဖို့ လိုပါတယ်
-      int src_x = x * 4;
-      int dst_x = x * 4;
-
-      // တကယ်လို့ stride ထဲမှာ data က ကွက်တိမရှိရင် targetWidth ထက် ကျော်ပြီး read မိနိုင်ခြေ ရှိ/မရှိ
-      // စစ်ဆေးပါ
-      if (src_x + 3 < stride) {
-        dst_row[dst_x + 0] = src_row[src_x + 2];  // R
-        dst_row[dst_x + 1] = src_row[src_x + 1];  // G
-        dst_row[dst_x + 2] = src_row[src_x + 0];  // B
-        dst_row[dst_x + 3] = src_row[src_x + 3];  // A
-      }
-    }
-  }
-
-  return rgba_buffer;
-}
-
 void stbi_write_to_vector(void* context, void* data, int size) {
   auto* vec = static_cast<std::vector<uint8_t>*>(context);
   auto* bytes = static_cast<const uint8_t*>(data);
@@ -91,32 +53,84 @@ void stbi_write_to_vector(void* context, void* data, int size) {
   vec->insert(vec->end(), bytes, bytes + size);
 }
 
-std::vector<uint8_t> PdfPage::renderToJpeg(int deviceWidth, float zoomFactor,
-                                           int quality) {
+double PdfPage::getOriginalWidth() { return FPDF_GetPageWidth(page); }
+
+double PdfPage::getOriginalHeight() { return FPDF_GetPageHeight(page); }
+
+std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
+                                                          int targetHeight) {
+  std::vector<uint8_t> rgba_buffer;
+  if (!page || targetWidth <= 0 || targetHeight <= 0) return rgba_buffer;
+
+  // ၁။ PDFium Bitmap ကို ဆောက်ခြင်း (1 = FPDFBitmap_BGRA)
+  FPDF_BITMAP bitmap = FPDFBitmap_Create(targetWidth, targetHeight, 1);
+  if (!bitmap) return rgba_buffer;
+
+  // Background ကို အဖြူရောင် Clear လုပ်ပေးခြင်း
+  FPDFBitmap_FillRect(bitmap, 0, 0, targetWidth, targetHeight, 0xFFFFFFFF);
+
+  // PDF စာမျက်နှာကို Bitmap ပေါ် ရင်ဒါဆွဲခိုင်းခြင်း
+  FPDF_RenderPageBitmap(bitmap, page, 0, 0, targetWidth, targetHeight, 0, 0);
+
+  std::uint8_t* source_buffer =
+      static_cast<std::uint8_t*>(FPDFBitmap_GetBuffer(bitmap));
+  int stride = FPDFBitmap_GetStride(bitmap);
+
+  // Safe Check: Memory size overflow မဖြစ်အောင် ကာကွယ်ခြင်း
+  size_t required_size =
+      static_cast<size_t>(targetWidth) * static_cast<size_t>(targetHeight) * 4;
+  try {
+    rgba_buffer.resize(required_size);
+  } catch (const std::bad_alloc& e) {  // length_error ထက် memory allocation
+                                       // failure အတွက် bad_alloc က ပိုမှန်ပါတယ်
+    FPDFBitmap_Destroy(bitmap);
+    return rgba_buffer;
+  }
+
+  // ၂။ Loop ပတ်ပြီး BGRA ကနေ RGBA ပြောင်းလဲခြင်း Logic
+  for (int y = 0; y < targetHeight; ++y) {
+    uint8_t* src_row = source_buffer + (y * stride);
+    uint8_t* dst_row = rgba_buffer.data() + (y * targetWidth * 4);
+
+    for (int x = 0; x < targetWidth; ++x) {
+      int src_idx = x * 4;
+      int dst_idx = x * 4;
+
+      // Safe Check: targetWidth အတွင်းပဲမို့ စိတ်ချရပါတယ် (stride ထက် ကျော်မကျော် စစ်တာကို
+      // ပိုရှင်းအောင် လုပ်ထားပါတယ်)
+      if (src_idx + 3 < stride) {
+        dst_row[dst_idx + 0] = src_row[src_idx + 2];  // R
+        dst_row[dst_idx + 1] = src_row[src_idx + 1];  // G
+        dst_row[dst_idx + 2] = src_row[src_idx + 0];  // B
+        dst_row[dst_idx + 3] = src_row[src_idx + 3];  // A
+      } else {
+        dst_row[dst_idx + 0] = 255;
+        dst_row[dst_idx + 1] = 255;
+        dst_row[dst_idx + 2] = 255;
+        dst_row[dst_idx + 3] = 255;
+      }
+    }
+  }
+
+  FPDFBitmap_Destroy(bitmap);
+  return rgba_buffer;
+}
+
+std::vector<uint8_t> PdfPage::renderToJpegWH(int width, int height,
+                                             int quality) {
   std::vector<uint8_t> outputJpegData;
   if (!page) return outputJpegData;
 
-  // ၁။ မူရင်း PDF ရဲ့ Width/Height အချိုးကို ရှာတယ်
-  double origWidth = getOriginalWidth();
-  double origHeight = getOriginalHeight();
-  if (origWidth <= 0 || origHeight <= 0) return outputJpegData;  // Safety Check
-
-  double aspectRatio = origHeight / origWidth;
-
-  // ၂။ Target Size ကို တွက်ချက်ခြင်း
-  int targetWidth = static_cast<int>(deviceWidth * zoomFactor);
-  int targetHeight = static_cast<int>(targetWidth * aspectRatio);
-
-  if (targetWidth <= 0 || targetHeight <= 0) return outputJpegData;
+  if (width <= 0 || height <= 0) return outputJpegData;
 
   // ၃။ Target Size အတိုင်း RGBA ထုတ်ယူခြင်း
-  auto rgba_data = renderToRGBAWithDeviceWidth(targetWidth, targetHeight);
+  auto rgba_data = renderToRGBAWithDeviceWidth(width, height);
   if (rgba_data.empty()) return outputJpegData;
+  // std::cout << "rgba size: " << rgba_data.size() << "\n";
 
   // 💡 Safe Check: တကယ်ရလာတဲ့ Pixel အရေအတွက်ကိုပဲ အခြေခံပြီး တွက်ပါမယ်
   // (ဒါမှ Memory Crash ဖြစ်တာကို ကာကွယ်နိုင်မှာပါ)
   size_t total_pixels = rgba_data.size() / 4;
-
   // ၄။ RGBA မှ RGB သို့ စိတ်ချရစွာ ပြောင်းလဲခြင်း
   std::vector<uint8_t> rgb_data;
   try {
@@ -135,111 +149,35 @@ std::vector<uint8_t> PdfPage::renderToJpeg(int deviceWidth, float zoomFactor,
 
   // ၅။ STB သို့ ကျွေးပြီး JPEG ပြောင်းခိုင်းမယ် 🎯
   // 💡 targetWidth နဲ့ targetHeight နေရာမှာ တကယ်ရလာတဲ့ pixel data နဲ့ ကိုက်ညီအောင် သုံးထားပါတယ်
-  stbi_write_jpg_to_func(stbi_write_to_vector, &outputJpegData, targetWidth,
-                         targetHeight, 3, rgb_data.data(), quality);
+  stbi_write_jpg_to_func(stbi_write_to_vector, &outputJpegData, width, height,
+                         3, rgb_data.data(), quality);
 
   return outputJpegData;
 }
-
-bool PdfPage::saveAsPng(const std::string& outPath, float zoomFactor) {
-  // ၁။ target width နဲ့ height ကို အရင်တွက်မယ်
-  int targetWidth = getRenderWith(zoomFactor);
-  int targetHeight = getRenderHeight(zoomFactor);
-
+bool PdfPage::saveAsPngWH(const std::string& outPath, int width, int height) {
   // ၂။ RGBA data ကို ယူမယ်
-  auto rgba_data = renderToRGBA(zoomFactor);
+  auto rgba_data = renderToRGBAWithDeviceWidth(width, height);
   if (rgba_data.empty()) return false;
 
   // 💡 ၃။ stride_in_bytes နေရာမှာ (targetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
-  int stride_in_bytes = targetWidth * 4;
+  int stride_in_bytes = width * 4;
 
-  int success = stbi_write_png(outPath.c_str(), targetWidth, targetHeight, 4,
+  int success = stbi_write_png(outPath.c_str(), width, height, 4,
                                rgba_data.data(), stride_in_bytes);
 
   return success != 0;
 }
-
-bool PdfPage::saveAsJpg(const std::string& outPath, float zoomFactor,
-                        int quality) {
-  // ၁။ target width နဲ့ height ကို အရင်တွက်မယ်
-  int targetWidth = getRenderWith(zoomFactor);
-  int targetHeight = getRenderHeight(zoomFactor);
-
+bool PdfPage::saveAsJpgWH(const std::string& outPath, int width, int height,
+                          int quality) {
   // ၂။ RGBA data ကို ယူမယ်
-  auto rgba_data = renderToRGBA(zoomFactor);
+  auto rgba_data = renderToRGBAWithDeviceWidth(width, height);
   if (rgba_data.empty()) return false;
 
   // 💡 ၃။ stride_in_bytes နေရာမှာ (targetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
-  int stride_in_bytes = targetWidth * 4;
+  int stride_in_bytes = width * 4;
 
-  int success = stbi_write_jpg(outPath.c_str(), targetWidth, targetHeight, 4,
+  int success = stbi_write_jpg(outPath.c_str(), width, height, 4,
                                rgba_data.data(), stride_in_bytes);
 
   return success != 0;
-}
-
-double PdfPage::getOriginalWidth() { return FPDF_GetPageWidth(page); }
-
-double PdfPage::getOriginalHeight() { return FPDF_GetPageHeight(page); }
-
-// 💡 မင်းရဲ့ အိုင်ဒီယာအတိုင်း Flutter ကပေးတဲ့ Target Width ပေါ်မူတည်ပြီး Height ကို တွက်ပေးမယ့်နေရာ
-std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
-                                                          int targetHeight) {
-  std::vector<uint8_t> rgba_buffer;
-  if (!page || targetWidth <= 0 || targetHeight <= 0) return rgba_buffer;
-
-  // ၁။ PDFium Bitmap ကို ဆောက်ခြင်း (1 = FPDFBitmap_BGRA)
-  FPDF_BITMAP bitmap = FPDFBitmap_Create(targetWidth, targetHeight, 1);
-  if (!bitmap) return rgba_buffer;  // Bitmap ဆောက်လို့မရရင် လှည့်ပြန်မယ်
-
-  // Background ကို အဖြူရောင် Clear လုပ်ပေးခြင်း
-  FPDFBitmap_FillRect(bitmap, 0, 0, targetWidth, targetHeight, 0xFFFFFFFF);
-
-  // PDF စာမျက်နှာကို Bitmap ပေါ် ရင်ဒါဆွဲခိုင်းခြင်း
-  FPDF_RenderPageBitmap(bitmap, page, 0, 0, targetWidth, targetHeight, 0, 0);
-
-  std::uint8_t* source_buffer =
-      static_cast<std::uint8_t*>(FPDFBitmap_GetBuffer(bitmap));
-  int stride = FPDFBitmap_GetStride(bitmap);
-
-  // 💡 Safe Check: Memory size overflow မဖြစ်အောင် အရင်ကာကွယ်မယ်
-  size_t required_size =
-      static_cast<size_t>(targetWidth) * static_cast<size_t>(targetHeight) * 4;
-  try {
-    rgba_buffer.resize(required_size);
-  } catch (const std::length_error& e) {
-    FPDFBitmap_Destroy(bitmap);  // Crash မဖြစ်ခင် bitmap ကို အရင်ဖျက်ပေးရမယ်
-    return rgba_buffer;
-  }
-
-  // ၂။ Loop ပတ်ပြီး BGRA ကနေ RGBA ပြောင်းလဲခြင်း Logic 🎯
-  for (int y = 0; y < targetHeight; ++y) {
-    uint8_t* src_row = source_buffer + (y * stride);
-    uint8_t* dst_row = rgba_buffer.data() + (y * targetWidth * 4);
-
-    for (int x = 0; x < targetWidth; ++x) {
-      int src_idx = x * 4;
-      int dst_idx = x * 4;
-
-      // 💡 SAFETY FIRST: သတ်မှတ်ထားတဲ့ stride ထက် ကျော်မသွားကြောင်း သေချာမှ ဖတ်မယ်
-      if (src_idx + 3 < stride) {
-        dst_row[dst_idx + 0] = src_row[src_idx + 2];  // R = B
-        dst_row[dst_idx + 1] = src_row[src_idx + 1];  // G = G
-        dst_row[dst_idx + 2] = src_row[src_idx + 0];  // B = R
-        dst_row[dst_idx + 3] = src_row[src_idx + 3];  // A = A
-      } else {
-        // တကယ်လို့ stride ထက် ကျော်နေရင် Safe ဖြစ်အောင် Transparent သို့မဟုတ် အဖြူရောင်
-        // ထည့်ပေးထားမယ်
-        dst_row[dst_idx + 0] = 255;
-        dst_row[dst_idx + 1] = 255;
-        dst_row[dst_idx + 2] = 255;
-        dst_row[dst_idx + 3] = 255;
-      }
-    }
-  }
-
-  // သုံးပြီးသား bitmap pointer ကို သေချာဖျက်ပေးခြင်း
-  FPDFBitmap_Destroy(bitmap);
-
-  return rgba_buffer;
 }

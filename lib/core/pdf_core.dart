@@ -5,33 +5,25 @@ import 'package:than_pdf_engine/core/types.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
 class PdfCore {
-  Pointer<Void> _pdfCore = nullptr;
-  int _pageCount = 0;
-  int get pageCount => _pageCount;
-
-  static void initPdfLib() {
-    pdfium_init();
-  }
-
-  /// init
-  Future<void> open(String pdfPath) async {
-    try {
-      _pdfCore = pdf_core_create();
-      final pathPtr = pdfPath.toNativeUtf8();
-      pdf_core_openFile(_pdfCore, pathPtr.cast<Char>(), nullptr);
-
-      _pageCount = pdf_core_getPageCount(_pdfCore);
-      calloc.free(pathPtr);
-    } catch (e) {
-      print(e);
-    }
-  }
-
   /// get all cal page size list
-  Future<List<PageSize>> getAllPageSizedList() async {
+  static Future<List<PageSize>> getAllPageSizedList(
+    String path, {
+    String? password,
+  }) async {
     return Isolate.run(() {
+      pdfium_init();
       final list = <PageSize>[];
-      final sizes = pdf_core_getAllPageSizes(_pdfCore);
+      final pathPtr = path.toNativeUtf8();
+      final passPtr = password == null ? nullptr : password.toNativeUtf8();
+
+      final core = pdf_core_create();
+      pdf_core_openFile(
+        core,
+        pathPtr.cast<Char>(),
+        password == null ? nullptr : passPtr.cast<Char>(),
+      );
+      final pageCount = pdf_core_getPageCount(core);
+      final sizes = pdf_core_getAllPageSizes(core);
 
       if (sizes != nullptr) {
         for (var i = 0; i < pageCount; i++) {
@@ -42,13 +34,10 @@ class PdfCore {
         }
       }
 
+      calloc.free(pathPtr);
+      calloc.free(passPtr);
       pdf_core_free_pageSizes(sizes.cast<Void>());
       return list;
     });
-  }
-
-  ///need to clear ram
-  void dispose() {
-    pdf_core_destroy(_pdfCore);
   }
 }

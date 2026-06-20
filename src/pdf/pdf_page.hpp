@@ -20,29 +20,17 @@ class PdfPage {
  public:
   PdfPage(FPDF_DOCUMENT doc = nullptr, FPDF_PAGE page = nullptr);
   ~PdfPage();
-  // Zoom factor လက်ခံပြီး JPEG data (bytes) ပြန်ပေးမယ့် Function
-  std::uint8_t* getBitmapSourcePtr(int targetWidth, int targetHeight);
-  std::vector<uint8_t> renderToRGBA(float zoomFactor);
-  std::vector<uint8_t> renderToJpeg(int deviceWidth, float zoomFactor,
-                                    int quality = 90);
-  bool saveAsPng(const std::string& outPath, float zoomFactor);
-  bool saveAsJpg(const std::string& outPath, float zoomFactor,
-                 int quality = 90);
 
-  int getRenderWith(float zoomFactor) {
-    return static_cast<int>(width_f * zoomFactor);
-  }
-  int getRenderHeight(float zoomFactor) {
-    return static_cast<int>(height_f * zoomFactor);
-  }
-  static PdfPage* createPagePtrFromDom(FPDF_DOCUMENT dom, int pageIndex) {
-    auto page = FPDF_LoadPage(dom, pageIndex);
-    return new PdfPage{dom, page};
-  }
+  std::uint8_t* getBitmapSourcePtr(int targetWidth, int targetHeight);
 
   std::vector<uint8_t> renderToRGBAWithDeviceWidth(int targetWidth,
                                                    int targetHeight);
 
   double getOriginalWidth();
   double getOriginalHeight();
+
+  std::vector<uint8_t> renderToJpegWH(int width, int height, int quality = 90);
+  bool saveAsPngWH(const std::string& outPath, int width, int height);
+  bool saveAsJpgWH(const std::string& outPath, int width, int height,
+                   int quality = 90);
 };

@@ -9,7 +9,7 @@ import 'package:ffi/ffi.dart';
 
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
-enum PdfWorkerCommand { stopWorker, getRgbaImage, getRgbaImageLowQuality }
+enum PdfWorkerCommand { stopWorker, getJpgImage }
 
 class WrokerImageResponse {
   final double renderWidth;
@@ -55,53 +55,28 @@ class PdfBackgroundWorker {
     _backgroundSendPort = null;
   }
 
-  // Future<TransferableTypedData?> requestPageImageRgba(int pageIndex) async {
-  //   final receive = ReceivePort();
-  //   try {
-  //     _backgroundSendPort?.send({
-  //       'command': PdfWorkerCommand.getRgbaImage,
-  //       'pageIndex': pageIndex,
-  //       'reply': receive.sendPort,
-  //     });
-  //     final res = await receive.first;
-  //     receive.close();
-  //     if (res is Map) {
-  //       return res['data'] as TransferableTypedData;
-  //     }
-  //     // print('map is ${res.runtimeType}');
-  //     return null;
-  //   } catch (e) {
-  //     receive.close();
-  //     return null;
-  //   }
-  // }
-
-  ///### (TransferableTypedData,renderWidth,renderHeight)
-  Future<WrokerImageResponse?> requestPageImageJpgQuality(
+  Future<TransferableTypedData?> requestPageImageJpg(
     int pageIndex, {
-    required double deviceWidth,
-    double zoomFactor = 1,
+    required double width,
+    required double height,
     int quality = 90,
   }) async {
+    if (_backgroundSendPort == null) return null;
     final receive = ReceivePort();
     try {
       _backgroundSendPort?.send({
-        'command': PdfWorkerCommand.getRgbaImageLowQuality,
+        'command': PdfWorkerCommand.getJpgImage,
         'pageIndex': pageIndex,
-        'zoomFactor': zoomFactor,
-        'deviceWidth': deviceWidth,
+        'width': width,
+        'height': height,
         'quality': quality,
         'reply': receive.sendPort,
       });
       final res = await receive.first;
       receive.close();
 
-      if (res is Map) {
-        return WrokerImageResponse(
-          renderWidth: res['renderWidth'] as double,
-          renderHeight: res['renderHeight'] as double,
-          trans: res['data'] as TransferableTypedData,
-        );
+      if (res is TransferableTypedData) {
+        return res;
       }
       // print('map is ${res.runtimeType}');
       return null;
@@ -133,11 +108,7 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
     SendPort? pendingReplyPort;
     bool isProcessing = false;
 
-    void processQueue(
-      double zoomFactor,
-      double deviceWidth,
-      int quality,
-    ) async {
+    void processQueue(double width, double height, int quality) async {
       if (isProcessing || pendingPageIndex == null) return;
 
       isProcessing = true;
@@ -153,29 +124,24 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
         final page = pdf_core_getPage(pdf, pageIndex);
         final bufferSizePtr = calloc<Int>();
         // final rgbaPtr = pdf_page_renderToRGBA(page, zoomFactor, bufferSizePtr);
-        final rgbaPtr = pdf_page_renderToJpeg(
+        final rgbaPtr = pdf_page_renderToJpegWH(
           page,
           bufferSizePtr,
-          deviceWidth.toInt(),
-          zoomFactor,
+          width.toInt(),
+          height.toInt(),
           quality,
         );
-        final renderWidth = pdf_page_getRenderWidth(page, zoomFactor);
-        final renderHeight = pdf_page_getRenderHeight(page, zoomFactor);
         final rgbaBytes = rgbaPtr.asTypedList(bufferSizePtr.value);
 
         final dartBytes = Uint8List.fromList(rgbaBytes);
+        // print('data size: ${dartBytes.length}');
         final trans = TransferableTypedData.fromList([dartBytes]);
 
         pdf_page_destroy(page);
         pdf_page_free_render_data(rgbaPtr);
         calloc.free(bufferSizePtr);
 
-        replyPort.send({
-          'renderWidth': renderWidth.toDouble(),
-          'renderHeight': renderHeight.toDouble(),
-          'data': trans,
-        });
+        replyPort.send(trans);
       } catch (e) {
         print('[render:error]: $e');
         replyPort.send(null); // error ဖြစ်ရင်လည်း UI ကို null ပြန်ပေးရမယ်
@@ -184,7 +150,7 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
       isProcessing = false;
 
       // နောက်ထပ်ကျန်တဲ့ Request အသစ်ကို ဆက်လုပ်
-      processQueue(zoomFactor, deviceWidth, quality);
+      processQueue(width, height, quality);
     }
 
     receive.listen((msg) {
@@ -194,15 +160,15 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
         // Stop
         if (command == .stopWorker) {
           final reply = msg['reply'] as SendPort;
-          print('close pdf');
+          // print('close pdf');
           pdf_core_destroy(pdf);
           reply.send(null);
         }
 
         // RGBA image Low Quality
-        if (command == .getRgbaImageLowQuality) {
-          final zoomFactor = msg['zoomFactor'] as double;
-          final deviceWidth = msg['deviceWidth'] as double;
+        if (command == .getJpgImage) {
+          final width = msg['width'] as double;
+          final height = msg['height'] as double;
           final quality = msg['quality'] as int;
 
           if (pendingReplyPort != null && pendingReplyPort != msg['reply']) {
@@ -214,7 +180,7 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
           pendingPageIndex = msg['pageIndex'] as int;
           pendingReplyPort = msg['reply'] as SendPort;
 
-          processQueue(zoomFactor, deviceWidth, quality);
+          processQueue(width, height, quality);
         }
       }
     });

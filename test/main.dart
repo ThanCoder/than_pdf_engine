@@ -19,9 +19,10 @@ void main() {
 
   final bufferSizePtr = calloc<Int>();
 
-  // final rgbaPtr = pdf_page_renderToRGBA(page, 1, bufferSizePtr);
-  // final rgbaBytes = rgbaPtr.asTypedList(bufferSizePtr.value);
-  // print(rgbaBytes.length);
+  final rgbaPtr = pdf_page_renderToJpegWH(page, bufferSizePtr, 400, 400, 100);
+  // final rgbaPtr = pdf_page_renderToJpeg(page, bufferSizePtr, 400, 1, 100);
+  final rgbaBytes = rgbaPtr.asTypedList(bufferSizePtr.value);
+  print(rgbaBytes.length);
 
   // pdf_page_free_render_data(rgbaPtr);
 

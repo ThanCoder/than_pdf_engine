@@ -104,6 +104,15 @@ int showRGBAImage(const std::vector<uint8_t>& buff, int imgWidth,
   return 0;
 }
 
+void saveData(std::vector<uint8_t>& buff, const std::string& path) {
+  if (buff.empty()) return;
+  std::ofstream outFile(path, std::ios::out | std::ios::binary);
+
+  if (!outFile.is_open()) return;
+  outFile.write(reinterpret_cast<const char*>(buff.data()), buff.size());
+  outFile.close();
+}
+
 int main() {
   auto path = "/home/thancoder/Documents/test_sm.pdf";
   PdfCore pdf;
@@ -114,11 +123,12 @@ int main() {
   std::cout << "page count: " << pdf.getPageCount() << "\n";
 
   auto page = pdf.getPage(1);
-  // auto sizes = pdf.getAllPageSizes();
-  // std::cout << "sizes: " << sizes.size() << "\n";
 
-  // auto caches = pdf.getPagesFromCacheRGBA(0.1, 0, 828);
-  // std::cout << "cache size: " << caches.size() << "\n";
+  auto data = page.renderToJpegWH(300, 300);
+  // auto data = page.renderToRGBAWithDeviceWidth(100, 200);
+
+  std::cout << "data size: " << data.size() << "\n";
+  saveData(data, "test.jpg");
 
   // size_t totalBytes = 0;
 

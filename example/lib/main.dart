@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
-import 'package:than_pdf_engine_example/reader_v2.dart';
+import 'package:than_pdf_engine_example/my_page.dart';
 import 'package:than_pkg/than_pkg.dart';
 
 void main() {
@@ -73,7 +73,7 @@ class _MyAppState extends State<MyApp> {
   void goPage(String path) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ReaderV2(path: path)),
+      MaterialPageRoute(builder: (context) => MyPage(path: path)),
     );
   }
 }

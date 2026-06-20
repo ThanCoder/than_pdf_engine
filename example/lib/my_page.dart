@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:than_pdf_engine_example/v3/t_pdf_render_v3_base.dart';
+import 'package:than_pdf_engine_example/reader_v4/pdf_reader.dart';
 
 class MyPage extends StatefulWidget {
   final String path;
@@ -10,13 +10,11 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
-  final controller = TPdfControllerV3();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("PDF Page")),
-      body: TPdfReaderV3(source: widget.path, controller: controller),
+      body: PdfReader(path: widget.path),
     );
   }
 }

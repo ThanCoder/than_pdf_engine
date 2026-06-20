@@ -1,11 +1,9 @@
-#include "than_pdf_engine.h"
-
-#include <cstdint>
 #include <cstring>
 #include <vector>
 
 #include "fpdfview.h"
 #include "pdf_core.hpp"
+#include "than_pdf_engine.h"
 
 //  PdfCore();
 void* pdf_core_create() { return new PdfCore(); }
@@ -83,47 +81,6 @@ void pdf_core_free_pageSizes(void* page_size_data_ptr) {
 
   if (val == nullptr) return;
   delete[] val;
-}
-
-// std::vector<PageCacheData> getPagesFromCacheRGBA(float zoomFactor,int
-// startIndex, int endIndex);
-Page_Cache_Data* pdf_core_getPagesFromCacheRGBA(void* pdf_core_ptr,
-                                                float zoomFactor,
-                                                int startIndex, int endIndex,
-                                                int* genCacheCount) {
-  auto pdf = reinterpret_cast<PdfCore*>(pdf_core_ptr);
-  if (pdf == nullptr) return nullptr;
-  auto data = pdf->getPagesFromCacheRGBA(zoomFactor, startIndex, endIndex);
-  if (data.empty()) return nullptr;
-  *genCacheCount = data.size();
-
-  auto pcSize = new Page_Cache_Data[data.size()];
-
-  for (int i = 0; i < data.size(); i++) {
-    pcSize[i].width = data[i].width;
-    pcSize[i].height = data[i].height;
-    pcSize[i].pageIndex = data[i].pageIndex;
-    // data
-    auto val = data[i].rgbaData;
-    pcSize[i].dataLength = val.size();
-
-    pcSize[i].rgbaData = new uint8_t[val.size()];
-    // ကူးမယ်
-    std::memcpy(pcSize[i].rgbaData, val.data(), val.size());
-  }
-
-  return pcSize;
-}
-
-void pdf_core_free_CacheRGBAData(Page_Cache_Data* page_cache_data_ptr,
-                                 int genCacheCount) {
-  if (page_cache_data_ptr == nullptr) return;
-  for (int i = 0; i < genCacheCount; i++) {
-    if (page_cache_data_ptr[i].rgbaData != nullptr) {
-      delete page_cache_data_ptr[i].rgbaData;
-    }
-  }
-  delete[] page_cache_data_ptr;
 }
 
 // PdfPage getPage(int pageIndex);

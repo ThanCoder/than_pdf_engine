@@ -7,3 +7,4 @@ import 'package:ffi/ffi.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
 export 'core/types.dart';
+export 'core/pdf_background_worker.dart';

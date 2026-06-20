@@ -7,32 +7,48 @@ if(ANDROID)
 endif()
 
 add_library(pdf_engine_wrapper SHARED
-    ffi/than_pdf_engine.cpp
+    ffi/than_pdf_engine.h
+    stbi_impl.cpp
     pdf/pdf_core.hpp
     pdf/pdf_core.cpp
     pdf/pdf_page.hpp
     pdf/pdf_page.cpp
+    ffi/page_core_wrapper.cpp
     ffi/pdf_page_wrapper.cpp
-    stbi_impl.cpp
+    ffi/pdf_util_wrapper.cpp
 )
 
-
-# add_executable(pdf_engine_wrapper
-#     main.cpp
-#     ffi/than_pdf_engine.cpp
-#     pdf/pdf_core.hpp
-#     pdf/pdf_core.cpp
-#     pdf/pdf_page.hpp
-#     pdf/pdf_page.cpp
-#     ffi/pdf_page_wrapper.cpp
-#     stbi_impl.cpp
-# )
 
 
 target_include_directories(pdf_engine_wrapper PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/pdf
 )
+
+if(LINUX)
+    # Linux Desktop အတွက်
+    target_link_libraries(pdf_engine_wrapper PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux/x64/libpdfium.so
+        glfw
+        GL
+    )
+    # 💡 Target ရဲ့ Type ကို စစ်ဆေးခြင်း
+    get_target_property(TARGET_TYPE pdf_engine_wrapper TYPE)
+
+    if(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+        # 🎯 shared (.so) ဖြစ်မှသာ RPATH logic ကို ထည့်မယ်
+        message(STATUS "Configuring RPATH for Shared Library")
+
+
+        # Linux အတွက် rpath သတ်မှတ်ခြင်း
+        set_target_properties(pdf_engine_wrapper PROPERTIES
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH "$ORIGIN"
+        )
+    endif()
+
+endif()
+
 
 # ၄။ OS အလိုက် သက်ဆိုင်ရာ Library များနှင့် Graphic APIs များ ခွဲခြား Link လုပ်ခြင်း
 if(ANDROID)
@@ -42,23 +58,10 @@ if(ANDROID)
         ${CMAKE_CURRENT_SOURCE_DIR}/lib/android/${ANDROID_ABI}/libpdfium.so
         log # Android native logcat သုံးနိုင်ရန် (လိုအပ်လျှင်)
         android # Android native app APIs
-        # EGL # Android Graphic interface
-        # GLESv3 # OpenGL ES 3.0 (Desktop က GL နေရာမှာ အစားထိုးရန်)
-    )
-else()
-    # Linux Desktop အတွက်
-    target_link_libraries(pdf_engine_wrapper PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux/x64/libpdfium.so
-        glfw
-        GL
-    )
 
-    # Linux အတွက် rpath သတ်မှတ်ခြင်း
-    set_target_properties(pdf_engine_wrapper PROPERTIES
-        BUILD_WITH_INSTALL_RPATH TRUE
-        INSTALL_RPATH "$ORIGIN"
     )
 endif()
+
 
 
 # cmake .. \

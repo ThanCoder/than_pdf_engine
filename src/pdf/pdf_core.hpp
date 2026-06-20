@@ -37,7 +37,4 @@ class PdfCore {
   PdfPage getPage(int pageIndex);
   PdfPage* getPagePtr(int pageIndex);
   std::vector<PageSizeData> getAllPageSizes();
-  std::vector<PageCacheData> getPagesFromCacheRGBA(float zoomFactor,
-                                                   int startIndex,
-                                                   int endIndex);
 };
