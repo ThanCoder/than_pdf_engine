@@ -5,15 +5,18 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:than_pdf_engine/core/pdf_background_worker.dart';
-import 'package:than_pdf_engine_example/reader_v4/pdf_reader_base.dart';
+
+import 'package:than_pdf_engine_example/reader_v4/core/pdf_reader_state.dart';
 
 class PdfPageItem extends StatefulWidget {
   final PageOffset pageOffset;
   final PdfBackgroundWorker backgroundWorker;
+  final bool mobileZooming;
   const PdfPageItem({
     super.key,
     required this.pageOffset,
     required this.backgroundWorker,
+    required this.mobileZooming,
   });
 
   @override
@@ -35,16 +38,26 @@ class _PdfPageItemState extends State<PdfPageItem> {
 
   @override
   void didUpdateWidget(covariant PdfPageItem oldWidget) {
-    // 💡 ပြင်ဆင်ချက်: Index၊ Width သို့မဟုတ် Height ထဲက တစ်ခုခု "မတူတော့ရင်" (ပြောင်းလဲသွားရင်) ပုံအသစ်ဆွဲမယ်
-    if (oldWidget.pageOffset.pageIndex != widget.pageOffset.pageIndex ||
-        oldWidget.pageOffset.width != widget.pageOffset.width ||
-        oldWidget.pageOffset.height != widget.pageOffset.height) {
-      highQualityImage = null;
-      isHighQuality = false;
+    super.didUpdateWidget(oldWidget);
+    if (widget.mobileZooming) return;
+    // double တန်ဖိုးတွေ မသိမသာ ကွာခြားမှုကြောင့် ခဏခဏ အလုပ်မလုပ်အောင် .round() သို့မဟုတ် ခွာပြီး စစ်ပါမယ်
+    final bool isPageChanged =
+        oldWidget.pageOffset.pageIndex != widget.pageOffset.pageIndex;
+    final bool isWidthChanged =
+        (oldWidget.pageOffset.width - widget.pageOffset.width).abs() > 0.5;
+    final bool isHeightChanged =
+        (oldWidget.pageOffset.height - widget.pageOffset.height).abs() > 0.5;
+
+    if (isPageChanged || isWidthChanged || isHeightChanged) {
+      _debounceTimer?.cancel();
+      setState(() {
+        lowQualityImage =
+            null; // အသစ်ပြန်ပွင့်ရင် low quality ပါ ရှင်းထုတ်ချင်ရင် ထားပါ (သို့မဟုတ် ချန်ထားနိုင်)
+        // highQualityImage = null;
+        isHighQuality = false;
+        isLoading = false;
+      });
       fetchImage(20);
-      print(
-        'did update: zoom သို့မဟုတ် စာမျက်နှာ ပြောင်းသွားသဖြင့် ပုံအသစ်ပြန်ယူသည်',
-      );
     }
   }
 
@@ -62,6 +75,7 @@ class _PdfPageItemState extends State<PdfPageItem> {
       widget.pageOffset.pageIndex,
       width: widget.pageOffset.width,
       height: widget.pageOffset.height,
+      quality: quality,
     );
     if (res != null) {
       if (quality > 50) {
@@ -78,7 +92,7 @@ class _PdfPageItemState extends State<PdfPageItem> {
     if (!isHighQuality) {
       _debounceTimer?.cancel();
       _debounceTimer = Timer(Duration(milliseconds: 500), () {
-        fetchImage(90);
+        fetchImage(100);
       });
     }
   }
@@ -116,22 +130,22 @@ class _PdfPageItemState extends State<PdfPageItem> {
     final double targetWidth = widget.pageOffset.width;
     final double targetHeight = widget.pageOffset.height;
 
-    if (highQualityImage != null) {
-      return Image.memory(
-        width: targetWidth,
-        height: targetHeight,
-        gaplessPlayback: true,
-        fit: BoxFit.fill,
-
-        highQualityImage!,
-      );
-    }
     return Image.memory(
-      lowQualityImage!,
+      // key: ValueKey(
+      //   'pdf_page_image-y:${widget.pageOffset.startOffset}-_${widget.pageOffset.pageIndex}',
+      // ),
+      highQualityImage != null ? highQualityImage! : lowQualityImage!,
       width: targetWidth,
       height: targetHeight,
       gaplessPlayback: true,
       fit: BoxFit.fill,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        return AnimatedOpacity(
+          opacity: 1,
+          duration: Duration(milliseconds: 300),
+          child: child,
+        );
+      },
     );
   }
 }
