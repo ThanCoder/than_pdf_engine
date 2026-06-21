@@ -9,68 +9,76 @@ import 'package:hooks/hooks.dart';
 import 'package:path/path.dart';
 
 void main(List<String> args) async {
-  await build(args, (input, output) async {
-    final packageName = input.packageName;
-    final targetArchitecture = input.config.code.targetArchitecture;
-    final targetOS = input.config.code.targetOS;
+  try {
+    await build(args, (input, output) async {
+      final packageName = input.packageName;
+      final targetArchitecture = input.config.code.targetArchitecture;
+      final targetOS = input.config.code.targetOS;
 
-    final cacheFolder = join(
-      input.packageRoot.toFilePath(),
-      '.dart_tool',
-      'native_assets',
-    );
+      final cacheFolder = join(
+        input.packageRoot.toFilePath(),
+        '.dart_tool',
+        'native_assets',
+      );
 
-    // ၁။ PDFium Library ကို Download ဆွဲခြင်း
-    final pdfimbLibCacheFile = await downloadPdfimbCacheLib(
-      targetOS,
-      targetArchitecture,
-      cacheFolder,
-      'libpdfium.so',
-    );
+      // ၁။ PDFium Library ကို Download ဆွဲခြင်း
+      final pdfimbLibCacheFile = await downloadPdfimbCacheLib(
+        targetOS,
+        targetArchitecture,
+        cacheFolder,
+        'libpdfium.so',
+      );
 
-    // ၂။ CMake ကနေ ထွက်ထားတဲ့ wrapper.so လမ်းကြောင်းကို ယူခြင်း
-    // (သင့် CMake build output location အလိုက် လမ်းကြောင်းကို ညွှန်ပေးပါ)
-    final wrapperFolder = join(
-      input.packageRoot.toFilePath(),
-      'src',
-      'dist_binaries',
-    );
-    late String wrapperLibPath;
-    if (targetOS == .linux) {
-      wrapperLibPath = join(wrapperFolder, 'libpdf_engine_wrapper_x64.so');
-    }
-    if (targetOS == .android) {
-      wrapperLibPath = join(wrapperFolder, switch (targetArchitecture) {
-        .arm => 'libpdf_engine_wrapper_armeabi-v7a.so',
-        .arm64 => 'libpdf_engine_wrapper_arm64-v8a.so',
-        _ => throw UnsupportedError(
-          'Unsupported: "$targetOS" - "$targetArchitecture"',
+      // ၂။ CMake ကနေ ထွက်ထားတဲ့ wrapper.so လမ်းကြောင်းကို ယူခြင်း
+      // (သင့် CMake build output location အလိုက် လမ်းကြောင်းကို ညွှန်ပေးပါ)
+      final wrapperLibName = 'libpdf_engine.so';
+      final wrapperFolder = join(
+        input.packageRoot.toFilePath(),
+        'src',
+        'dist_binaries',
+      );
+      late String wrapperLibPath;
+      if (targetOS == .linux) {
+        wrapperLibPath = join(wrapperFolder,'linux', wrapperLibName);
+      }
+      if (targetOS == .android) {
+        final abiName = switch (targetArchitecture) {
+          .arm => 'armeabi-v7a',
+          .arm64 => 'arm64-v8a',
+          _ => throw UnsupportedError(
+            'Unsupported: "$targetOS" - "$targetArchitecture"',
+          ),
+        };
+        wrapperLibPath = join(wrapperFolder, abiName, wrapperLibName);
+      }
+
+      // ၃။ Wrapper Library ကို Asset ထဲ ထည့်ခြင်း
+      output.assets.code.add(
+        CodeAsset(
+          package: packageName,
+          name: '${packageName}_bindings_generated.dart',
+          linkMode: DynamicLoadingBundled(),
+          file: File(wrapperLibPath).uri,
         ),
-      });
-    }
+      );
 
-    // ၃။ Wrapper Library ကို Asset ထဲ ထည့်ခြင်း
-    output.assets.code.add(
-      CodeAsset(
-        package: packageName,
-        name: '${packageName}_bindings_generated.dart',
-        linkMode: DynamicLoadingBundled(),
-        file: File(wrapperLibPath).uri,
-      ),
-    );
+      // ၄။ PDFium Library ကို Asset ထဲ ထည့်ခြင်း
+      output.assets.code.add(
+        CodeAsset(
+          package: packageName,
+          name: 'libpdfium.so',
+          linkMode: DynamicLoadingBundled(),
+          file: pdfimbLibCacheFile.uri,
+        ),
+      );
 
-    // ၄။ PDFium Library ကို Asset ထဲ ထည့်ခြင်း
-    output.assets.code.add(
-      CodeAsset(
-        package: packageName,
-        name: 'libpdfium.so',
-        linkMode: DynamicLoadingBundled(),
-        file: pdfimbLibCacheFile.uri,
-      ),
-    );
-
-    print('Native assets bundled successfully!');
-  });
+      print('Native assets bundled successfully!');
+    });
+  } catch (e, stackTrace) {
+    print('❌ [Build Script Error]: $e');
+    print(stackTrace);
+    rethrow; // Flutter tool ကို သိအောင် ပြန် throw လုပ်မယ်
+  }
 }
 
 //chromium%2F7891
