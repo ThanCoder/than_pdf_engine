@@ -11,6 +11,8 @@ echo "----------------------------------------"
 
 # Output folder ရှင်းလင်းဆောက်လုပ်ခြင်း
 OUTPUT_DIR="dist_binaries"
+OUTPUT_LIB_NAME="libpdf_engine"
+
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
@@ -35,9 +37,14 @@ do
     cmake --build .
     cd ..
     
-    TARGET_SO="$BUILD_DIR/libpdf_engine_wrapper.so"
+
+    TARGET_SO="$BUILD_DIR/${OUTPUT_LIB_NAME}.so"
+    ANDROID_OUT_DIR="${OUTPUT_DIR}/android/${ABI}"
+
     if [ -f "$TARGET_SO" ]; then
-        cp "$TARGET_SO" "$OUTPUT_DIR/libpdf_engine_wrapper_${ABI}.so"
+        mkdir -p "${ANDROID_OUT_DIR}"
+
+        cp "$TARGET_SO" "${ANDROID_OUT_DIR}/${OUTPUT_LIB_NAME}.so"
         echo "✅ Android ($ABI) done!"
     else
         echo "❌ Android ($ABI) build failed!"
@@ -60,9 +67,13 @@ cmake .. -DCMAKE_BUILD_TYPE=Release > /dev/null 2>&1
 cmake --build .
 cd ..
 
-TARGET_SO="$BUILD_DIR/libpdf_engine_wrapper.so"
+TARGET_SO="$BUILD_DIR/${OUTPUT_LIB_NAME}.so"
+LINUX_OUT_DIR="$OUTPUT_DIR/linux"
+
 if [ -f "$TARGET_SO" ]; then
-    cp "$TARGET_SO" "$OUTPUT_DIR/libpdf_engine_wrapper_x64.so"
+    mkdir -p "${LINUX_OUT_DIR}"
+
+    cp "$TARGET_SO" "$LINUX_OUT_DIR/${OUTPUT_LIB_NAME}.so"
     echo "✅ Linux (x64) done!"
 else
     echo "❌ Linux (x64) build failed!"
@@ -71,5 +82,5 @@ rm -rf "$BUILD_DIR"
 
 echo "----------------------------------------"
 echo "🎉 All Platform Binaries Generated successfully!"
-ls -l "$OUTPUT_DIR"
+ls -l "$LINUX_OUT_DIR"
 echo "----------------------------------------"
