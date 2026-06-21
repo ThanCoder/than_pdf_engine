@@ -8,7 +8,7 @@ endif()
 
 add_library(pdf_engine_wrapper SHARED
     ffi/than_pdf_engine.h
-    stbi_impl.cpp
+    pdf/stbi_impl.cpp
     pdf/pdf_core.hpp
     pdf/pdf_core.cpp
     pdf/pdf_page.hpp

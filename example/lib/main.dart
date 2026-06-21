@@ -5,7 +5,7 @@ import 'package:than_pdf_engine_example/my_page.dart';
 import 'package:than_pkg/than_pkg.dart';
 
 void main() {
-  runApp(MaterialApp(theme: ThemeData.dark(), home: const MyApp()));
+  runApp(MaterialApp(theme: ThemeData.light(), home: const MyApp()));
 }
 
 class MyApp extends StatefulWidget {

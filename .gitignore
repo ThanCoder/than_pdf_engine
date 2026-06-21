@@ -30,8 +30,8 @@ migrate_working_dir/
 /build/
 /coverage/
 build
-src/dist_binaries
-
+src/build
+src/.cache
 # ဒါပေမဲ့ .gitkeep file တွေကိုတော့ skip မလုပ်ဘဲ track လုပ်ခွင့်ပေးမယ်
 !**/.gitkeep
 
