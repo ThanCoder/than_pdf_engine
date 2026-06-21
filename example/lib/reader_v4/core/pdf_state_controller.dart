@@ -51,7 +51,7 @@ class PdfStateController {
 
     // မျက်နှာပြင်ရဲ့ အလယ်ဗဟိုကို ရှာဖွေခြင်း
     double centerX = _state.lastConstraints!.maxWidth / 2;
-    double centerY = _state.lastConstraints!.maxHeight / 2;
+    // double centerY = _state.lastConstraints!.maxHeight / 2;
 
     // 💡 [အဓိက ပြင်ဆင်ချက်]
     // Formula ထဲက အပေါင်း/အနှုတ် (Sign) ကို ညာဘက်လွင့်မထွက်အောင် အခုလို ပြောင်းလဲပေးရပါမယ်
