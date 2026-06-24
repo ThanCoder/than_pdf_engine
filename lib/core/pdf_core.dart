@@ -41,6 +41,7 @@ class PdfCore {
     });
   }
 
+  /// ### Gen Pdf Thumbnail JPG Type
   static Future<bool> genThumbnailJpg(
     String pdfPath,
     String outpath, {
@@ -81,6 +82,7 @@ class PdfCore {
     });
   }
 
+  /// ### Gen Pdf Thumbnail PNG Type
   static Future<bool> genThumbnailPng(
     String pdfPath,
     String outpath, {
