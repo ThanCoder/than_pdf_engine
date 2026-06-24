@@ -40,4 +40,82 @@ class PdfCore {
       return list;
     });
   }
+
+  static Future<bool> genThumbnailJpg(
+    String pdfPath,
+    String outpath, {
+    int pageIndex = 0,
+    String? password,
+    int width = 200,
+    int height = 200,
+    int quality = 70,
+  }) async {
+    return Isolate.run(() {
+      pdfium_init();
+      final pdfPathPtr = pdfPath.toNativeUtf8();
+      final outPathPtr = outpath.toNativeUtf8();
+      Pointer<Utf8> passwordPtr = nullptr;
+      if (password != null) {
+        passwordPtr = password.toNativeUtf8();
+      }
+      try {
+        pdf_util_saveJpgWithIndex(
+          pdfPathPtr.cast<Char>(),
+          password == null ? nullptr : passwordPtr.cast<Char>(),
+          outPathPtr.cast<Char>(),
+          pageIndex,
+          width,
+          height,
+          quality,
+        );
+      } catch (e) {
+        return false;
+      } finally {
+        calloc.free(pdfPathPtr);
+        calloc.free(outPathPtr);
+        if (passwordPtr != nullptr) {
+          calloc.free(passwordPtr);
+        }
+      }
+      return true;
+    });
+  }
+
+  static Future<bool> genThumbnailPng(
+    String pdfPath,
+    String outpath, {
+    int pageIndex = 0,
+    String? password,
+    int width = 200,
+    int height = 200,
+  }) async {
+    return Isolate.run(() {
+      pdfium_init();
+      final pdfPathPtr = pdfPath.toNativeUtf8();
+      final outPathPtr = outpath.toNativeUtf8();
+      Pointer<Utf8> passwordPtr = nullptr;
+      if (password != null) {
+        passwordPtr = password.toNativeUtf8();
+      }
+      try {
+        pdf_util_savePngWithIndex(
+          pdfPathPtr.cast<Char>(),
+          password == null ? nullptr : passwordPtr.cast<Char>(),
+          outPathPtr.cast<Char>(),
+          pageIndex,
+          width,
+          height,
+        );
+      } catch (e) {
+        return false;
+      } finally {
+        calloc.free(pdfPathPtr);
+        calloc.free(outPathPtr);
+        if (passwordPtr != nullptr) {
+          calloc.free(passwordPtr);
+        }
+      }
+      return true;
+    });
+  }
 }
