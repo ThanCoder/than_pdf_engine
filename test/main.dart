@@ -4,7 +4,6 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:than_pdf_engine/than_pdf_engine.dart';
 
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
@@ -15,14 +14,14 @@ void main() async {
   final pageCount = pdf_core_getPageCount(pdf);
   print('count: ${pdf_core_getPageCount(pdf)}');
 
-  await PdfCore.genThumbnailJpg(
-    "/home/thancoder/Documents/test3.pdf",
-    'test3.jpg',
-  );
-  await PdfCore.genThumbnailPng(
-    "/home/thancoder/Documents/test3.pdf",
-    'test3.png',
-  );
+  // await PdfCore.genThumbnailJpg(
+  //   "/home/thancoder/Documents/test3.pdf",
+  //   'test3.jpg',
+  // );
+  // await PdfCore.genThumbnailPng(
+  //   "/home/thancoder/Documents/test3.pdf",
+  //   'test3.png',
+  // );
 
   pdf_core_destroy(pdf);
   calloc.free(pathPtr);

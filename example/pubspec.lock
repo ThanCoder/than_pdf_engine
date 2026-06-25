@@ -313,7 +313,7 @@ packages:
     source: hosted
     version: "1.9.1"
   pdfium_dart:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: pdfium_dart
       sha256: "86e95c66b09f3245b95c4924f2edce8d4f7c9786876e5c5ee8e36b104a94bbb0"
@@ -456,11 +456,9 @@ packages:
   than_pdf_engine:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "6fef514e3f6c7a1de9b29a952a3e57ac682b93c9"
-      url: "https://github.com/ThanCoder/than_pdf_engine.git"
-    source: git
+      path: ".."
+      relative: true
+    source: path
     version: "0.0.1"
   than_pkg:
     dependency: "direct main"

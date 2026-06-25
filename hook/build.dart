@@ -47,7 +47,7 @@ void main(List<String> args) async {
             'Unsupported: "$targetOS" - "$targetArchitecture"',
           ),
         };
-        wrapperLibPath = join(wrapperFolder, abiName, wrapperLibName);
+        wrapperLibPath = join(wrapperFolder,'android', abiName, wrapperLibName);
       }
 
       // ၃။ Wrapper Library ကို Asset ထဲ ထည့်ခြင်း

@@ -12,15 +12,14 @@ dependencies:
     sdk: flutter
 
   than_pdf_engine:
-    # path: ../
-    git: https://github.com/ThanCoder/than_pdf_engine.git
+    path: ../
+    # git: https://github.com/ThanCoder/than_pdf_engine.git
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   than_pkg: ^5.1.0
   t_widgets: ^2.6.1
-  pdfium_dart: ^0.2.5
 
 dev_dependencies:
   flutter_test:
