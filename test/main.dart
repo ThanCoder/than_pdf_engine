@@ -4,7 +4,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-
+import 'package:than_pdf_engine/than_pdf_engine.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
 void main() async {
@@ -14,17 +14,34 @@ void main() async {
   final pageCount = pdf_core_getPageCount(pdf);
   print('count: ${pdf_core_getPageCount(pdf)}');
 
-  // await PdfCore.genThumbnailJpg(
-  //   "/home/thancoder/Documents/test3.pdf",
-  //   'test3.jpg',
-  // );
-  // await PdfCore.genThumbnailPng(
-  //   "/home/thancoder/Documents/test3.pdf",
-  //   'test3.png',
-  // );
+  await PdfCore.genThumbnailJpg(
+    "/home/thancoder/Documents/test3.pdf",
+    'test3.jpg',
+  );
+  await PdfCore.genThumbnailPng(
+    "/home/thancoder/Documents/test3.pdf",
+    'test3.png',
+  );
+
+  /// get PageSize class
+  ///
+  // await PdfCore.getAllPageSizedList('/home/thancoder/Documents/test3.pdf');
 
   pdf_core_destroy(pdf);
   calloc.free(pathPtr);
+  // Pdf Background Wroker
+  // do isolate
+  final pdfWorker = PdfBackgroundWorker.getInstance;
+  
+  // /// wroker init
+  // await pdfWorker.run('/home/thancoder/Documents/test3.pdf');
+  
+  // /// current supported JPG Image
+  // pdfWorker.requestPageImageJpg(pageIndex, width: width, height: height)
 
-  print('test');
+  // // need to stop
+  // //it will call [stop] method
+  // await pdfWorker.dispose();
+  // same
+  // await pdfWorker.stop();
 }

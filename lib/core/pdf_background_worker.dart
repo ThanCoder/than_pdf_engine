@@ -23,13 +23,21 @@ class WrokerImageResponse {
 }
 
 class PdfBackgroundWorker {
-  static PdfBackgroundWorker instance = PdfBackgroundWorker._();
-  PdfBackgroundWorker._();
-  factory PdfBackgroundWorker() => instance;
+  static PdfBackgroundWorker? _instance;
+
+  /// ### Singleton
+  static PdfBackgroundWorker get getInstance {
+    _instance ??= PdfBackgroundWorker();
+    return _instance!;
+  }
 
   Isolate? _isolate;
   SendPort? _backgroundSendPort;
 
+  /// ### Worker Initialize
+  ///
+  /// when if you do not use -> you should call [stop,dispose] method
+  ///
   Future<void> run(String path) async {
     await stop();
 
@@ -42,6 +50,7 @@ class PdfBackgroundWorker {
     receive.close();
   }
 
+  /// ### Stop Worker
   Future<void> stop() async {
     if (_backgroundSendPort != null) {
       final receive = ReceivePort();
@@ -55,6 +64,7 @@ class PdfBackgroundWorker {
     _backgroundSendPort = null;
   }
 
+  /// ### Get Page Image
   Future<TransferableTypedData?> requestPageImageJpg(
     int pageIndex, {
     required double width,
@@ -87,11 +97,13 @@ class PdfBackgroundWorker {
     }
   }
 
+  /// ### Stop Worker
   Future<void> dispose() async {
     await stop();
   }
 }
 
+/// run in background
 Future<void> _backgroundPdfWroker((SendPort, String) args) async {
   final sendPort = args.$1;
   final path = args.$2;

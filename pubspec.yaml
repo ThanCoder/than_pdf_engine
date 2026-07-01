@@ -13,7 +13,7 @@ dependencies:
   ffi: ^2.1.4
   path: ^1.9.1
   # archive: ^4.0.9
-  pdfium_dart: ^0.2.5
+  # pdfium_dart: ^0.2.5
 
 dev_dependencies:
   ffigen: ^20.1.1

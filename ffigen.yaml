@@ -4,12 +4,14 @@ description: |
   Bindings for `src/than_pdf_engine.h`.
 
   Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
-output: 'lib/than_pdf_engine_bindings_generated.dart'
+output: "lib/than_pdf_engine_bindings_generated.dart"
 headers:
   entry-points:
-    - 'src/ffi/than_pdf_engine.h'
+    - "src/ffi/than_pdf_engine.h"
+    - "src/include/*.h"
   include-directives:
-    - 'src/ffi/than_pdf_engine.h'
+    - "src/ffi/than_pdf_engine.h"
+    - "src/include/*.h"
 ffi-native:
 comments:
   style: any

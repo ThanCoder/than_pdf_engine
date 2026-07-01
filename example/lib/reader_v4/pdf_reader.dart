@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:than_pdf_engine/core/pdf_core.dart';
 import 'package:than_pdf_engine/than_pdf_engine.dart';
 import 'package:than_pdf_engine_example/reader_v4/pdf_reader_base.dart';
 
@@ -20,13 +19,13 @@ class _PdfReaderState extends State<PdfReader> {
 
   @override
   void dispose() {
-    PdfBackgroundWorker.instance.dispose();
+    PdfBackgroundWorker.getInstance.dispose();
     super.dispose();
   }
 
   List<PageSize> pageSizeList = [];
   bool isLoading = false;
-  final backgroundWorker = PdfBackgroundWorker.instance;
+  final backgroundWorker = PdfBackgroundWorker.getInstance;
   void init() async {
     try {
       setState(() {

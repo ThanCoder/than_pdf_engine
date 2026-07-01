@@ -5,7 +5,21 @@ import 'package:than_pdf_engine/core/types.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
 class PdfCore {
-  /// get all cal page size list
+  /// ### Get Pdf Page Size Class
+  ///
+  ///```dart
+  /// class PageSize {
+  ///   final int pageIndex;
+  ///   final double width;
+  ///   final double height;
+  ///   PageSize({
+  ///     required this.pageIndex,
+  ///     required this.width,
+  ///     required this.height,
+  ///   });
+  /// }
+  /// ```
+  ///
   static Future<List<PageSize>> getAllPageSizedList(
     String path, {
     String? password,
