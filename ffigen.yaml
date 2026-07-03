@@ -7,10 +7,10 @@ description: |
 output: "lib/than_pdf_engine_bindings_generated.dart"
 headers:
   entry-points:
-    - "src/ffi/than_pdf_engine.h"
+    - "src/ffi/ffi_wrapper.h"
     - "src/include/*.h"
   include-directives:
-    - "src/ffi/than_pdf_engine.h"
+    - "src/ffi/ffi_wrapper.h"
     - "src/include/*.h"
 ffi-native:
 comments:

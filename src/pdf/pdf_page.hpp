@@ -3,22 +3,24 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include "pdf_core.hpp"
 extern "C" {
 #include <fpdfview.h>
 #include <stb_image_write.h>
 }
 class PdfPage {
  private:
-  FPDF_DOCUMENT doc = nullptr;
+  PdfCore* core = nullptr;
   FPDF_PAGE page = nullptr;
   FPDF_BITMAP current_bitmap = nullptr;
-  int width = 0;
-  int height = 0;
-  int width_f = 0;
-  int height_f = 0;
+  double width = 0;
+  double height = 0;
+  double width_f = 0;
+  double height_f = 0;
 
  public:
-  PdfPage(FPDF_DOCUMENT doc = nullptr, FPDF_PAGE page = nullptr);
+  PdfPage(PdfCore* core, int pageIndex);
   ~PdfPage();
 
   std::uint8_t* getBitmapSourcePtr(int targetWidth, int targetHeight);
@@ -26,11 +28,18 @@ class PdfPage {
   std::vector<uint8_t> renderToRGBAWithDeviceWidth(int targetWidth,
                                                    int targetHeight);
 
-  double getOriginalWidth();
-  double getOriginalHeight();
+  double getWidth() { return width; }
+  double getHeight() { return height; }
 
-  std::vector<uint8_t> renderToJpegWH(int width, int height, int quality = 90);
-  bool saveAsPngWH(const std::string& outPath, int width, int height);
-  bool saveAsJpgWH(const std::string& outPath, int width, int height,
-                   int quality = 90);
+  double getWidthF() { return width_f; }
+  double getHeightF() { return height_f; }
+
+  bool isValid() { return core != nullptr && page != nullptr; }
+
+  std::vector<uint8_t> renderToJpegWH(int targetWidth, int targetHeight,
+                                      int quality = 90);
+  bool saveAsPngWH(const std::string& outPath, int targetWidth,
+                   int targetHeight);
+  bool saveAsJpgWH(const std::string& outPath, int targetWidth,
+                   int targetHeight, int quality = 90);
 };

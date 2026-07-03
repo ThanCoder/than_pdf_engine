@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
+// ignore_for_file: non_constant_identifier_names, public_member_api_docs, sort_constructors_first
 // ignore_for_file: avoid_print
 
 import 'dart:ffi';
@@ -111,9 +111,11 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
     final receive = ReceivePort();
     sendPort.send(receive.sendPort);
 
-    final pdf = pdf_core_create();
+    final pdfCorePtr = pdf_core_create();
     final pathPtr = path.toNativeUtf8();
-    pdf_core_openFile(pdf, pathPtr.cast<Char>(), nullptr);
+    pdf_core_openFile(pdfCorePtr, pathPtr.cast<Char>(), nullptr);
+    //free လုပ်ဖို့မမေ့နဲ့အုံး
+    calloc.free(pathPtr);
 
     // လက်ရှိ Render လုပ်ဖို့ တန်းစီနေတဲ့ (နောက်ဆုံးဝင်လာတဲ့) Page Index ကို မှတ်ရန်
     int? pendingPageIndex;
@@ -133,24 +135,29 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
       pendingReplyPort = null;
 
       try {
-        final page = pdf_core_getPage(pdf, pageIndex);
+        // final page = pdf_core_getPage(pdf, pageIndex);
+        final pagePtr = pdf_page_create(pdfCorePtr, pageIndex);
+
         final bufferSizePtr = calloc<Int>();
-        // final rgbaPtr = pdf_page_renderToRGBA(page, zoomFactor, bufferSizePtr);
-        final rgbaPtr = pdf_page_renderToJpegWH(
-          page,
+
+        ///native ဆီကနေ jpg image data pointer
+        final render_jpg_buff = pdf_page_renderToJpegWH(
+          pagePtr,
           bufferSizePtr,
           width.toInt(),
           height.toInt(),
           quality,
         );
-        final rgbaBytes = rgbaPtr.asTypedList(bufferSizePtr.value);
+        final rgbaBytes = render_jpg_buff.cast<Uint8>().asTypedList(
+          bufferSizePtr.value,
+        );
 
         final dartBytes = Uint8List.fromList(rgbaBytes);
         // print('data size: ${dartBytes.length}');
         final trans = TransferableTypedData.fromList([dartBytes]);
 
-        pdf_page_destroy(page);
-        pdf_page_free_render_data(rgbaPtr);
+        pdf_page_free_renderToJpegWH(render_jpg_buff);
+        pdf_page_destroy(pagePtr);
         calloc.free(bufferSizePtr);
 
         replyPort.send(trans);
@@ -172,8 +179,7 @@ Future<void> _backgroundPdfWroker((SendPort, String) args) async {
         // Stop
         if (command == .stopWorker) {
           final reply = msg['reply'] as SendPort;
-          // print('close pdf');
-          pdf_core_destroy(pdf);
+          pdf_core_destroy(pdfCorePtr);
           reply.send(null);
         }
 

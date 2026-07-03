@@ -20,38 +20,55 @@ class PdfCore {
   /// }
   /// ```
   ///
-  static Future<List<PageSize>> getAllPageSizedList(
+  static Future<(List<PageSize>, String?)> getAllPageSizedList(
     String path, {
     String? password,
   }) async {
-    return Isolate.run(() {
+    return await Isolate.run<(List<PageSize>, String?)>(() {
       pdfium_init();
       final list = <PageSize>[];
       final pathPtr = path.toNativeUtf8();
       final passPtr = password == null ? nullptr : password.toNativeUtf8();
+      Pointer<Void> corePtr = nullptr;
+      Pointer<Page_Size_Data> sizesPtr = nullptr;
+      String? error;
 
-      final core = pdf_core_create();
-      pdf_core_openFile(
-        core,
-        pathPtr.cast<Char>(),
-        password == null ? nullptr : passPtr.cast<Char>(),
-      );
-      final pageCount = pdf_core_getPageCount(core);
-      final sizes = pdf_core_getAllPageSizes(core);
+      try {
+        corePtr = pdf_core_create();
 
-      if (sizes != nullptr) {
-        for (var i = 0; i < pageCount; i++) {
-          final size = (sizes + i).ref;
-          list.add(
-            PageSize(pageIndex: i, width: size.width, height: size.height),
-          );
+        final isOpened = pdf_core_openFile(
+          corePtr,
+          pathPtr.cast<Char>(),
+          password == null ? nullptr : passPtr.cast<Char>(),
+        );
+        // print('isOpened: $isOpened');
+        if (!isOpened) {
+          error = 'Failed to open PDF file: $path';
+        }
+        final pageCount = pdf_core_getPageCount(corePtr);
+        sizesPtr = pdf_core_getAllPageSizes(corePtr);
+
+        if (sizesPtr != nullptr) {
+          for (var i = 0; i < pageCount; i++) {
+            final size = (sizesPtr + i).ref;
+            list.add(
+              PageSize(pageIndex: i, width: size.width, height: size.height),
+            );
+          }
+        }
+      } finally {
+        calloc.free(pathPtr);
+        if (passPtr != nullptr) {
+          calloc.free(passPtr);
+        }
+        if (sizesPtr != nullptr) {
+          pdf_core_free_getAllPageSizes(sizesPtr.cast<Void>());
+        }
+        if (corePtr != nullptr) {
+          pdf_core_destroy(corePtr);
         }
       }
-
-      calloc.free(pathPtr);
-      calloc.free(passPtr);
-      pdf_core_free_pageSizes(sizes.cast<Void>());
-      return list;
+      return (list, error);
     });
   }
 

@@ -1,15 +1,26 @@
 #include "pdf_page.hpp"
 
+#include <fstream>
+#include <iostream>
 #include <stdexcept>
 
 #include "fpdfview.h"
+#include "pdf_core.hpp"
 
-PdfPage::PdfPage(FPDF_DOCUMENT doc, FPDF_PAGE page) : doc(doc), page(page) {
-  if (!page) return;
+PdfPage::PdfPage(PdfCore* core, int pageIndex) : core(core) {
+  if (!core) {
+    std::cerr << "`PdfCore` is nullptr \n";
+    return;
+  }
+  page = FPDF_LoadPage(core->getDocumentPtr(), pageIndex);
+  if (!page) {
+    std::cerr << "`FPDF_LoadPage` is nullptr \n";
+    return;
+  }
   width = FPDF_GetPageWidth(page);
   height = FPDF_GetPageHeight(page);
-  width_f = static_cast<int>(FPDF_GetPageWidthF(page));
-  height_f = static_cast<int>(FPDF_GetPageHeightF(page));
+  width_f = FPDF_GetPageWidthF(page);
+  height_f = FPDF_GetPageHeightF(page);
 }
 
 PdfPage::~PdfPage() {
@@ -22,7 +33,9 @@ PdfPage::~PdfPage() {
     current_bitmap = nullptr;
   }
 }
+
 std::uint8_t* PdfPage::getBitmapSourcePtr(int targetWidth, int targetHeight) {
+  if (!isValid()) return nullptr;
   // နဂိုရှိပြီးသား bitmap ကို ဖျက်မယ်
   if (current_bitmap) {
     FPDFBitmap_Destroy(current_bitmap);
@@ -53,14 +66,11 @@ void stbi_write_to_vector(void* context, void* data, int size) {
   vec->insert(vec->end(), bytes, bytes + size);
 }
 
-double PdfPage::getOriginalWidth() { return FPDF_GetPageWidth(page); }
-
-double PdfPage::getOriginalHeight() { return FPDF_GetPageHeight(page); }
-
 std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
                                                           int targetHeight) {
   std::vector<uint8_t> rgba_buffer;
-  if (!page || targetWidth <= 0 || targetHeight <= 0) return rgba_buffer;
+  if (!isValid()) return rgba_buffer;
+  if (!page) return rgba_buffer;
 
   // ၁။ PDFium Bitmap ကို ဆောက်ခြင်း (1 = FPDFBitmap_BGRA)
   FPDF_BITMAP bitmap = FPDFBitmap_Create(targetWidth, targetHeight, 1);
@@ -116,68 +126,79 @@ std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
   return rgba_buffer;
 }
 
-std::vector<uint8_t> PdfPage::renderToJpegWH(int width, int height,
+std::vector<uint8_t> PdfPage::renderToJpegWH(int targetWidth, int targetHeight,
                                              int quality) {
   std::vector<uint8_t> outputJpegData;
-  if (!page) return outputJpegData;
+  if (!isValid() || !page) return outputJpegData;
 
-  if (width <= 0 || height <= 0) return outputJpegData;
+  // 0 ဖြစ်နေရင် original size သုံးမယ်
+  if (targetWidth == 0) targetWidth = width;
+  if (targetHeight == 0) targetHeight = height;
 
-  // ၃။ Target Size အတိုင်း RGBA ထုတ်ယူခြင်း
-  auto rgba_data = renderToRGBAWithDeviceWidth(width, height);
+  // 💡 အရေးကြီးဆုံးအချက်: Render လုပ်တဲ့အချိန်မှာတင် target size ကို ထည့်ပါ
+  // (သင်၏ renderToRGBAWithDeviceWidth function က target size လက်ခံနိုင်အောင်
+  // ပြင်ထားရပါမယ်)
+  auto rgba_data = renderToRGBAWithDeviceWidth(targetWidth, targetHeight);
+
   if (rgba_data.empty()) return outputJpegData;
-  // std::cout << "rgba size: " << rgba_data.size() << "\n";
 
-  // 💡 Safe Check: တကယ်ရလာတဲ့ Pixel အရေအတွက်ကိုပဲ အခြေခံပြီး တွက်ပါမယ်
-  // (ဒါမှ Memory Crash ဖြစ်တာကို ကာကွယ်နိုင်မှာပါ)
-  size_t total_pixels = rgba_data.size() / 4;
-  // ၄။ RGBA မှ RGB သို့ စိတ်ချရစွာ ပြောင်းလဲခြင်း
+  size_t total_pixels = static_cast<size_t>(targetWidth * targetHeight);
+
+  // အကယ်၍ rgba_data.size() / 4 က total_pixels နဲ့ မကိုက်ရင် error တက်နိုင်ပါတယ်
+  if (rgba_data.size() < total_pixels * 4) return outputJpegData;
+
   std::vector<uint8_t> rgb_data;
-  try {
-    rgb_data.reserve(total_pixels * 3);
-  } catch (const std::length_error& e) {
-    // Memory မဆံ့ရင် Crash မဖြစ်စေဘဲ ဒီမှာတင် ရပ်လိုက်မယ်
-    return outputJpegData;
-  }
+  rgb_data.resize(total_pixels * 3);  // reserve အစား resize သုံးပါ
 
   for (size_t i = 0; i < total_pixels; ++i) {
     size_t rgba_idx = i * 4;
-    rgb_data.push_back(rgba_data[rgba_idx]);      // R
-    rgb_data.push_back(rgba_data[rgba_idx + 1]);  // G
-    rgb_data.push_back(rgba_data[rgba_idx + 2]);  // B
+    size_t rgb_idx = i * 3;
+    rgb_data[rgb_idx] = rgba_data[rgba_idx];          // R
+    rgb_data[rgb_idx + 1] = rgba_data[rgba_idx + 1];  // G
+    rgb_data[rgb_idx + 2] = rgba_data[rgba_idx + 2];  // B
   }
 
-  // ၅။ STB သို့ ကျွေးပြီး JPEG ပြောင်းခိုင်းမယ် 🎯
-  // 💡 targetWidth နဲ့ targetHeight နေရာမှာ တကယ်ရလာတဲ့ pixel data နဲ့ ကိုက်ညီအောင် သုံးထားပါတယ်
-  stbi_write_jpg_to_func(stbi_write_to_vector, &outputJpegData, width, height,
-                         3, rgb_data.data(), quality);
+  stbi_write_jpg_to_func(stbi_write_to_vector, &outputJpegData, targetWidth,
+                         targetHeight, 3, rgb_data.data(), quality);
 
   return outputJpegData;
 }
-bool PdfPage::saveAsPngWH(const std::string& outPath, int width, int height) {
+
+bool PdfPage::saveAsPngWH(const std::string& outPath, int targetWidth,
+                          int targetHeight) {
+  if (!isValid()) return false;
+  if (targetWidth == 0) {
+    targetWidth = width;
+  }
+  if (targetHeight == 0) {
+    targetHeight = height;
+  }
   // ၂။ RGBA data ကို ယူမယ်
-  auto rgba_data = renderToRGBAWithDeviceWidth(width, height);
+  auto rgba_data = renderToRGBAWithDeviceWidth(targetWidth, targetHeight);
   if (rgba_data.empty()) return false;
 
-  // 💡 ၃။ stride_in_bytes နေရာမှာ (targetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
-  int stride_in_bytes = width * 4;
+  // 💡 ၃။ stride_in_bytes နေရာမှာ (targettargetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
+  int stride_in_bytes = targetWidth * 4;
 
-  int success = stbi_write_png(outPath.c_str(), width, height, 4,
+  int success = stbi_write_png(outPath.c_str(), targetWidth, targetHeight, 4,
                                rgba_data.data(), stride_in_bytes);
 
   return success != 0;
 }
-bool PdfPage::saveAsJpgWH(const std::string& outPath, int width, int height,
-                          int quality) {
-  // ၂။ RGBA data ကို ယူမယ်
-  auto rgba_data = renderToRGBAWithDeviceWidth(width, height);
-  if (rgba_data.empty()) return false;
+// အကြံပြုချက်: ဤသို့ ပြင်ဆင်နိုင်သည်
+bool PdfPage::saveAsJpgWH(const std::string& outPath, int targetWidth,
+                          int targetHeight, int quality) {
+  if (!page) return false;
+  if (!isValid()) return false;
+  auto buff = renderToJpegWH(targetWidth, targetHeight, quality);
+  if (buff.empty()) return false;
 
-  // 💡 ၃။ stride_in_bytes နေရာမှာ (targetWidth * 4) ကို ပြောင်းသုံးရပါမယ်
-  int stride_in_bytes = width * 4;
+  std::ofstream outFile(outPath);
+  if (!outFile.is_open()) return false;
 
-  int success = stbi_write_jpg(outPath.c_str(), width, height, 4,
-                               rgba_data.data(), stride_in_bytes);
+  outFile.write(reinterpret_cast<const char*>(buff.data()), buff.size());
 
-  return success != 0;
+  outFile.flush();
+  outFile.close();
+  return true;
 }

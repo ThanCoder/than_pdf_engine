@@ -1,11 +1,13 @@
 #include <GLFW/glfw3.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
 #include "pdf/pdf_core.hpp"
+#include "pdf_page.hpp"
 
 extern "C" {
 #include <fpdfview.h>
@@ -114,40 +116,30 @@ void saveData(std::vector<uint8_t>& buff, const std::string& path) {
 }
 
 int main() {
+  FPDF_InitLibrary();
+  std::string currentPath =
+      "/home/thancoder/projects/flutter_ffi_projects/than_pdf_engine/";
+
   auto path = "/home/thancoder/Documents/test_sm.pdf";
-  PdfCore pdf;
-  if (!pdf.openFile(path)) {
+  PdfCore core;
+  if (!core.openFile(path)) {
     std::cerr << "Load Fail \n";
     return 1;
   }
-  std::cout << "page count: " << pdf.getPageCount() << "\n";
+  std::cout << "page count: " << core.getPageCount() << "\n";
 
-  auto page = pdf.getPage(1);
+  PdfPage page{&core, 0};
 
-  auto data = page.renderToJpegWH(300, 300);
-  // auto data = page.renderToRGBAWithDeviceWidth(100, 200);
+  page.saveAsPngWH(currentPath + "test.png", 300, 300);
+  page.saveAsJpgWH(currentPath + "test.jpg", 100, 100);
+  auto data = page.renderToJpegWH(200, 200);
 
   std::cout << "data size: " << data.size() << "\n";
-  saveData(data, "test.jpg");
-
-  // size_t totalBytes = 0;
-
-  // // cache တစ်ခုချင်းစီရဲ့ vector size ကို ပေါင်းပေးတာပါ
-  // for (const auto& cache : caches) {
-  //   totalBytes += cache.rgbaData.size();
-  // }
-
-  // // Bytes ကနေ MB ပြောင်းခြင်း (Binary MB = 1024 * 1024)
-  // double totalMB = static_cast<double>(totalBytes) / (1024 * 1024);
-
-  // std::cout << "Total Bytes: " << totalBytes << " bytes\n";
-  // std::cout << "Total Cache Size: " << totalMB << " MB\n";
-
-  // page.saveAsPng("../test.png", 0.2);
-  // page.saveAsPng("../test.jpg", 0.2);
-  // float zoom = 0.2;
-  // auto buff = page.renderToRGBA(zoom);
-  // showRGBAImage(buff, page.getRenderWith(zoom), page.getRenderHeight(zoom));
-
+  // saveData(data, "../test.jpg");
+  std::ofstream outFile(currentPath + "image.jpg",
+                        std::ios::out | std::ios::binary);
+  outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
+  outFile.flush();
+  outFile.close();
   return 0;
 }

@@ -7,8 +7,9 @@ if(ANDROID)
 endif()
 
 add_library(pdf_engine SHARED
-    ffi/than_pdf_engine.h
-    pdf/stbi_impl.cpp
+    ffi/ffi_wrapper.h
+    ffi/ffi_wrapper.cpp
+    pdf/impl.cpp
     pdf/pdf_core.hpp
     pdf/pdf_core.cpp
     pdf/pdf_page.hpp
@@ -16,8 +17,22 @@ add_library(pdf_engine SHARED
     ffi/page_core_wrapper.cpp
     ffi/pdf_page_wrapper.cpp
     ffi/pdf_util_wrapper.cpp
+
 )
 
+# add_executable(pdf_engine
+#     main.cpp
+#     ffi/ffi_wrapper.h
+#     ffi/ffi_wrapper.cpp
+#     pdf/impl.cpp
+#     pdf/pdf_core.hpp
+#     pdf/pdf_core.cpp
+#     pdf/pdf_page.hpp
+#     pdf/pdf_page.cpp
+#     ffi/page_core_wrapper.cpp
+#     ffi/pdf_page_wrapper.cpp
+#     ffi/pdf_util_wrapper.cpp
+# )
 
 
 target_include_directories(pdf_engine PRIVATE

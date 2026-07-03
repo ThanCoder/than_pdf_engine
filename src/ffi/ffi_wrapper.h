@@ -20,82 +20,72 @@ extern "C" {
 #endif
 //*******************PDFium Lib************************ */
 
+// FPDF_InitLibrary
+void pdfium_init();
+
 // FPDF_DestroyLibrary()
 void pdfium_destroy();
 
 //*******************PDF Core && PDF Page************************ */
-typedef struct {
-  int pageIndex;
-  int width;
-  int height;
-  int dataLength;
-  uint8_t* rgbaData;
-} Page_Cache_Data;
 
 typedef struct {
   float width;
   float height;
 } Page_Size_Data;
 
-// pdfium
-void pdfium_init();
-
 //  PdfCore();
 void* pdf_core_create();
 
 // ~PdfCore();
 void pdf_core_destroy(void* pdf_core_ptr);
+
 // bool openFile(const std::string& path, const std::string& password = "");
 bool pdf_core_openFile(void* pdf_core_ptr, const char* path,
                        const char* password);
 // bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
 //                    const std::string& password = "");
-bool openMemoryRaw(void* pdf_core_ptr, const unsigned char* dataBuffer,
-                   int dataSize, const char* password);
+bool pdf_core_openMemoryRaw(void* pdf_core_ptr, const unsigned char* buffer,
+                            int buffer_Size, const char* password);
 
 // bool openMemory64Raw(const unsigned char* dataBuffer, int dataSize,
 //                      const std::string& password = "");
-bool openMemory64Raw(void* pdf_core_ptr, const unsigned char* dataBuffer,
-                     int dataSize, const char* password);
+bool pdf_core_openMemory64Raw(void* pdf_core_ptr, const unsigned char* buffer,
+                              int buffer_Size, const char* password);
+
+bool pdf_core_fileOpened(void* pdf_core_ptr);
 
 // int getPageCount();
 int pdf_core_getPageCount(void* pdf_core_ptr);
 // std::vector<PageSizeData> getAllPageSizes();
+// return -> `page_size_data_ptr`
 Page_Size_Data* pdf_core_getAllPageSizes(void* pdf_core_ptr);
-void pdf_core_free_pageSizes(void* page_size_data_ptr);
-
-// PdfPage getPage(int pageIndex);
-//
-// return `pdf_page_ptr`
-void* pdf_core_getPage(void* pdf_core_ptr, int pageIndex);
+// free -> `pdf_core_getAllPageSizes`
+void pdf_core_free_getAllPageSizes(void* page_size_data_ptr);
 
 //-------------------PDF Page-----------------------
-
+// return -> `pdf_page_ptr*`
+void* pdf_page_create(void* pdf_core_ptr, int page_index);
 //  ~PdfPage();
 void pdf_page_destroy(void* pdf_page_ptr);
+// core opened
+//
+// page opened
+bool pdf_page_isVaild(void* pdf_page_ptr);
 
-// std::uint8_t* getBitmapSourcePtr(float zoomFactor);
-uint8_t* pdf_page_getBitmapSourcePtr(void* pdf_page_ptr, int targetWidth,
-                                     int targetHeight);
-// free render data
-void pdf_page_free_render_data(uint8_t* render_data_ptr);
+double pdf_page_getWidth(void* pdf_page_ptr);
+double pdf_page_getHeight(void* pdf_page_ptr);
 
-// std::vector<uint8_t> renderToRGBAWithDeviceWidth(int deviceWidth,float
-// zoomFactor);
-uint8_t* pdf_page_renderToRGBAWithDeviceWidth(void* pdf_page_ptr,
-                                              int* bufferSize, int deviceWidth,
-                                              float targetHeight);
-// double getOriginalWidth();
-float pdf_page_getOriginalWidth(void* pdf_page_ptr);
-// double getOriginalHeight();
-float pdf_page_getOriginalHeight(void* pdf_page_ptr);
+double pdf_page_getWidthF(void* pdf_page_ptr);
+double pdf_page_getHeightF(void* pdf_page_ptr);
 
-uint8_t* pdf_page_renderToJpegWH(void* pdf_page_ptr, int* bufferSize, int width,
-                                 int height, int quality);
-bool pdf_page_saveAsPngWH(void* pdf_page_ptr, const char* outPath, int width,
+bool pdf_page_saveAsPngWH(void* pdf_page_ptr, const char* out_path, int width,
                           int height);
-bool pdf_page_saveAsJpgWH(void* pdf_page_ptr, const char* outPath, int width,
+bool pdf_page_saveAsJpgWH(void* pdf_page_ptr, const char* out_path, int width,
                           int height, int quality);
+
+unsigned char* pdf_page_renderToJpegWH(void* pdf_page_ptr, int* data_size,
+                                       int width, int height, int quality);
+void pdf_page_free_renderToJpegWH(unsigned char* render_jpg_buff);
 
 //********************PDF Util *********************** */
 bool pdf_util_saveJpgWithIndex(const char* pdf_path, const char* password,

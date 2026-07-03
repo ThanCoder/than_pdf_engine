@@ -4,13 +4,13 @@
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
+/// FPDF_InitLibrary
+@ffi.Native<ffi.Void Function()>()
+external void pdfium_init();
+
 /// FPDF_DestroyLibrary()
 @ffi.Native<ffi.Void Function()>()
 external void pdfium_destroy();
-
-/// pdfium
-@ffi.Native<ffi.Void Function()>()
-external void pdfium_init();
 
 /// PdfCore();
 @ffi.Native<ffi.Pointer<ffi.Void> Function()>()
@@ -44,10 +44,10 @@ external bool pdf_core_openFile(
     ffi.Pointer<ffi.Char>,
   )
 >()
-external bool openMemoryRaw(
+external bool pdf_core_openMemoryRaw(
   ffi.Pointer<ffi.Void> pdf_core_ptr,
-  ffi.Pointer<ffi.UnsignedChar> dataBuffer,
-  int dataSize,
+  ffi.Pointer<ffi.UnsignedChar> buffer,
+  int buffer_Size,
   ffi.Pointer<ffi.Char> password,
 );
 
@@ -61,94 +61,62 @@ external bool openMemoryRaw(
     ffi.Pointer<ffi.Char>,
   )
 >()
-external bool openMemory64Raw(
+external bool pdf_core_openMemory64Raw(
   ffi.Pointer<ffi.Void> pdf_core_ptr,
-  ffi.Pointer<ffi.UnsignedChar> dataBuffer,
-  int dataSize,
+  ffi.Pointer<ffi.UnsignedChar> buffer,
+  int buffer_Size,
   ffi.Pointer<ffi.Char> password,
 );
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<ffi.Void>)>()
+external bool pdf_core_fileOpened(ffi.Pointer<ffi.Void> pdf_core_ptr);
 
 /// int getPageCount();
 @ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>)>()
 external int pdf_core_getPageCount(ffi.Pointer<ffi.Void> pdf_core_ptr);
 
 /// std::vector<PageSizeData> getAllPageSizes();
+/// return -> `page_size_data_ptr`
 @ffi.Native<ffi.Pointer<Page_Size_Data> Function(ffi.Pointer<ffi.Void>)>()
 external ffi.Pointer<Page_Size_Data> pdf_core_getAllPageSizes(
   ffi.Pointer<ffi.Void> pdf_core_ptr,
 );
 
+/// free -> `pdf_core_getAllPageSizes`
 @ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
-external void pdf_core_free_pageSizes(ffi.Pointer<ffi.Void> page_size_data_ptr);
+external void pdf_core_free_getAllPageSizes(
+  ffi.Pointer<ffi.Void> page_size_data_ptr,
+);
 
-/// PdfPage getPage(int pageIndex);
-///
-/// return `pdf_page_ptr`
+/// -------------------PDF Page-----------------------
+/// return -> `pdf_page_ptr*`
 @ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Int)>()
-external ffi.Pointer<ffi.Void> pdf_core_getPage(
+external ffi.Pointer<ffi.Void> pdf_page_create(
   ffi.Pointer<ffi.Void> pdf_core_ptr,
-  int pageIndex,
+  int page_index,
 );
 
 /// ~PdfPage();
 @ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
 external void pdf_page_destroy(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
-/// std::uint8_t* getBitmapSourcePtr(float zoomFactor);
-@ffi.Native<
-  ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Void>, ffi.Int, ffi.Int)
->()
-external ffi.Pointer<ffi.Uint8> pdf_page_getBitmapSourcePtr(
-  ffi.Pointer<ffi.Void> pdf_page_ptr,
-  int targetWidth,
-  int targetHeight,
-);
+/// core opened
+///
+/// page opened
+@ffi.Native<ffi.Bool Function(ffi.Pointer<ffi.Void>)>()
+external bool pdf_page_isVaild(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
-/// free render data
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>()
-external void pdf_page_free_render_data(ffi.Pointer<ffi.Uint8> render_data_ptr);
+@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
+external double pdf_page_getWidth(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
-/// std::vector<uint8_t> renderToRGBAWithDeviceWidth(int deviceWidth,float
-/// zoomFactor);
-@ffi.Native<
-  ffi.Pointer<ffi.Uint8> Function(
-    ffi.Pointer<ffi.Void>,
-    ffi.Pointer<ffi.Int>,
-    ffi.Int,
-    ffi.Float,
-  )
->()
-external ffi.Pointer<ffi.Uint8> pdf_page_renderToRGBAWithDeviceWidth(
-  ffi.Pointer<ffi.Void> pdf_page_ptr,
-  ffi.Pointer<ffi.Int> bufferSize,
-  int deviceWidth,
-  double targetHeight,
-);
+@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
+external double pdf_page_getHeight(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
-/// double getOriginalWidth();
-@ffi.Native<ffi.Float Function(ffi.Pointer<ffi.Void>)>()
-external double pdf_page_getOriginalWidth(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
+external double pdf_page_getWidthF(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
-/// double getOriginalHeight();
-@ffi.Native<ffi.Float Function(ffi.Pointer<ffi.Void>)>()
-external double pdf_page_getOriginalHeight(ffi.Pointer<ffi.Void> pdf_page_ptr);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Uint8> Function(
-    ffi.Pointer<ffi.Void>,
-    ffi.Pointer<ffi.Int>,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-  )
->()
-external ffi.Pointer<ffi.Uint8> pdf_page_renderToJpegWH(
-  ffi.Pointer<ffi.Void> pdf_page_ptr,
-  ffi.Pointer<ffi.Int> bufferSize,
-  int width,
-  int height,
-  int quality,
-);
+@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
+external double pdf_page_getHeightF(ffi.Pointer<ffi.Void> pdf_page_ptr);
 
 @ffi.Native<
   ffi.Bool Function(
@@ -160,7 +128,7 @@ external ffi.Pointer<ffi.Uint8> pdf_page_renderToJpegWH(
 >()
 external bool pdf_page_saveAsPngWH(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
-  ffi.Pointer<ffi.Char> outPath,
+  ffi.Pointer<ffi.Char> out_path,
   int width,
   int height,
 );
@@ -176,10 +144,32 @@ external bool pdf_page_saveAsPngWH(
 >()
 external bool pdf_page_saveAsJpgWH(
   ffi.Pointer<ffi.Void> pdf_page_ptr,
-  ffi.Pointer<ffi.Char> outPath,
+  ffi.Pointer<ffi.Char> out_path,
   int width,
   int height,
   int quality,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.UnsignedChar> Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Int>,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+  )
+>()
+external ffi.Pointer<ffi.UnsignedChar> pdf_page_renderToJpegWH(
+  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  ffi.Pointer<ffi.Int> data_size,
+  int width,
+  int height,
+  int quality,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.UnsignedChar>)>()
+external void pdf_page_free_renderToJpegWH(
+  ffi.Pointer<ffi.UnsignedChar> render_jpg_buff,
 );
 
 /// ********************PDF Util *********************** */
@@ -5305,6 +5295,7 @@ external int FPDFImageObj_LoadJpegFileInline(
   ffi.Pointer<FPDF_FILEACCESS> file_access,
 );
 
+/// TODO(thestig): Start deprecating this once FPDFPageObj_SetMatrix() is stable.
 ///
 /// Set the transform matrix of |image_object|.
 ///
@@ -9316,22 +9307,6 @@ external int FPDFPage_GetRawThumbnailData(
 external FPDF_BITMAP FPDFPage_GetThumbnailAsBitmap(FPDF_PAGE page);
 
 /// *******************PDF Core && PDF Page************************ */
-final class Page_Cache_Data extends ffi.Struct {
-  @ffi.Int()
-  external int pageIndex;
-
-  @ffi.Int()
-  external int width;
-
-  @ffi.Int()
-  external int height;
-
-  @ffi.Int()
-  external int dataLength;
-
-  external ffi.Pointer<ffi.Uint8> rgbaData;
-}
-
 final class Page_Size_Data extends ffi.Struct {
   @ffi.Float()
   external double width;

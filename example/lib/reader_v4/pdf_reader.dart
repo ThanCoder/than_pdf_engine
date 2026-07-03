@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:t_widgets/t_widgets.dart';
 import 'package:than_pdf_engine/than_pdf_engine.dart';
 import 'package:than_pdf_engine_example/reader_v4/pdf_reader_base.dart';
 
@@ -26,18 +27,24 @@ class _PdfReaderState extends State<PdfReader> {
   List<PageSize> pageSizeList = [];
   bool isLoading = false;
   final backgroundWorker = PdfBackgroundWorker.getInstance;
+  String? error;
   void init() async {
     try {
       setState(() {
         isLoading = true;
       });
-      pageSizeList = await PdfCore.getAllPageSizedList(widget.path);
+      final (pageSizeList, error) = await PdfCore.getAllPageSizedList(
+        widget.path,
+      );
+      this.error = error;
+      this.pageSizeList = pageSizeList;
       await backgroundWorker.run(widget.path);
       if (!mounted) return;
       setState(() {
         isLoading = false;
       });
     } catch (e) {
+      debugPrint('[_PdfReaderState:init]: $e');
       if (!mounted) return;
       setState(() {
         isLoading = false;
@@ -49,6 +56,11 @@ class _PdfReaderState extends State<PdfReader> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Center(child: CircularProgressIndicator.adaptive());
+    }
+    if (error != null) {
+      return Center(
+        child: Text(error!, style: TextStyle(color: Colors.red)),
+      );
     }
     return PdfReaderBase(
       pageSizeList: pageSizeList,

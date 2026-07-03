@@ -3,23 +3,23 @@
 #include <cstddef>
 
 #include "fpdfview.h"
-#include "pdf_page.hpp"
 
-PdfCore::PdfCore() { FPDF_InitLibrary(); }
+PdfCore::PdfCore() {
+  // FPDF_InitLibrary();
+}
 
 PdfCore::~PdfCore() {
   if (doc) {
     FPDF_CloseDocument(doc);
     doc = nullptr;
   }
-  // FPDF_DestroyLibrary();
 }
 
 bool PdfCore::openFile(const std::string& path, const std::string& password) {
   doc = FPDF_LoadDocument(path.c_str(),
                           password.empty() ? nullptr : password.c_str());
   if (!doc) return false;
-
+  isFileOpened = true;
   return true;
 }
 
@@ -46,19 +46,6 @@ bool PdfCore::openMemory64Raw(const unsigned char* dataBuffer, int dataSize,
 int PdfCore::getPageCount() {
   if (!doc) return -1;
   return FPDF_GetPageCount(doc);
-}
-
-PdfPage PdfCore::getPage(int pageIndex) {
-  if (!doc) return PdfPage();
-  auto page = FPDF_LoadPage(doc, pageIndex);
-  if (!page) return PdfPage();
-  return PdfPage{doc, page};
-}
-PdfPage* PdfCore::getPagePtr(int pageIndex) {
-  if (!doc) return nullptr;
-  auto page = FPDF_LoadPage(doc, pageIndex);
-  if (!page) return nullptr;
-  return new PdfPage{doc, page};
 }
 
 std::vector<PageSizeData> PdfCore::getAllPageSizes() {
