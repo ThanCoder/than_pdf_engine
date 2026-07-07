@@ -18,7 +18,7 @@ class PdfCore {
   bool isFileOpened = false;
 
  public:
-  PdfCore();
+  PdfCore() = default;
   ~PdfCore();
   bool openFile(const std::string& path, const std::string& password = "");
   bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,

@@ -1,13 +1,11 @@
 #include <GLFW/glfw3.h>
 
 #include <cstdint>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-#include "pdf/pdf_core.hpp"
-#include "pdf_page.hpp"
+#include "ffi/ffi_wrapper.h"
 
 extern "C" {
 #include <fpdfview.h>
@@ -121,25 +119,26 @@ int main() {
       "/home/thancoder/projects/flutter_ffi_projects/than_pdf_engine/";
 
   auto path = "/home/thancoder/Documents/test_sm.pdf";
-  PdfCore core;
-  if (!core.openFile(path)) {
-    std::cerr << "Load Fail \n";
-    return 1;
-  }
-  std::cout << "page count: " << core.getPageCount() << "\n";
 
-  PdfPage page{&core, 0};
+  // PdfCore core;
+  // if (!core.openFile(path)) {
+  //   std::cerr << "Load Fail \n";
+  //   return 1;
+  // }
+  // std::cout << "page count: " << core.getPageCount() << "\n";
 
-  page.saveAsPngWH(currentPath + "test.png", 300, 300);
-  page.saveAsJpgWH(currentPath + "test.jpg", 100, 100);
-  auto data = page.renderToJpegWH(200, 200);
+  // PdfPage page{&core, 0};
 
-  std::cout << "data size: " << data.size() << "\n";
-  // saveData(data, "../test.jpg");
-  std::ofstream outFile(currentPath + "image.jpg",
-                        std::ios::out | std::ios::binary);
-  outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
-  outFile.flush();
-  outFile.close();
+  // page.saveAsPngWH(currentPath + "test.png", 300, 300);
+  // page.saveAsJpgWH(currentPath + "test.jpg", 100, 100);
+  // auto data = page.renderToJpegWH(200, 200);
+
+  // std::cout << "data size: " << data.size() << "\n";
+  // // saveData(data, "../test.jpg");
+  // std::ofstream outFile(currentPath + "image.jpg",
+  //                       std::ios::out | std::ios::binary);
+  // outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
+  // outFile.flush();
+  // outFile.close();
   return 0;
 }

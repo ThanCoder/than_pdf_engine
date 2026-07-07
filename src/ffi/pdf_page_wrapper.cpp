@@ -6,60 +6,60 @@
 #include "pdf_core.hpp"
 #include "pdf_page.hpp"
 
-void* pdf_page_create(void* pdf_core_ptr, int page_index) {
+pdf_page_t pdf_page_create(pdf_core_t pdf_core_ptr, int page_index) {
   auto core = reinterpret_cast<PdfCore*>(pdf_core_ptr);
   if (!core) return nullptr;
-  return new PdfPage{core, page_index};
+  return reinterpret_cast<pdf_page_t>(new PdfPage{core, page_index});
 }
 //  ~PdfPage();
-void pdf_page_destroy(void* pdf_page_ptr) {
+void pdf_page_destroy(pdf_page_t pdf_page_ptr) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return;
   delete page;
 }
 
-bool pdf_page_isVaild(void* pdf_page_ptr) {
+bool pdf_page_isVaild(pdf_page_t pdf_page_ptr) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return false;
   return page->isValid();
 }
 
-double pdf_page_getWidth(void* pdf_page_ptr) {
+double pdf_page_getWidth(pdf_page_t pdf_page_ptr) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return 0;
   return page->getWidth();
 }
-double pdf_page_getHeight(void* pdf_page_ptr) {
+double pdf_page_getHeight(pdf_page_t pdf_page_ptr) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return 0;
   return page->getHeight();
 }
 
-double pdf_page_getWidthF(void* pdf_page_ptr) {
+double pdf_page_getWidthF(pdf_page_t pdf_page_ptr) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return 0;
   return page->getWidthF();
 }
-double pdf_page_getHeightF(void* pdf_page_ptr) {
+double pdf_page_getHeightF(pdf_page_t pdf_page_ptr) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return 0;
   return page->getHeightF();
 }
 
-bool pdf_page_saveAsPngWH(void* pdf_page_ptr, const char* out_path, int width,
-                          int height) {
+bool pdf_page_saveAsPngWH(pdf_page_t pdf_page_ptr, const char* out_path,
+                          int width, int height) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return false;
   return page->saveAsPngWH(out_path, width, height);
 }
-bool pdf_page_saveAsJpgWH(void* pdf_page_ptr, const char* out_path, int width,
-                          int height, int quality) {
+bool pdf_page_saveAsJpgWH(pdf_page_t pdf_page_ptr, const char* out_path,
+                          int width, int height, int quality) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page) return false;
   return page->saveAsJpgWH(out_path, width, height, quality);
 }
 
-unsigned char* pdf_page_renderToJpegWH(void* pdf_page_ptr, int* data_size,
+unsigned char* pdf_page_renderToJpegWH(pdf_page_t pdf_page_ptr, int* data_size,
                                        int width, int height, int quality) {
   auto page = reinterpret_cast<PdfPage*>(pdf_page_ptr);
   if (!page || !data_size) return nullptr;

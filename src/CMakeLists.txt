@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 project(pdf_engine)
 
+# C++ Standard ကို သတ်မှတ်ပေးခြင်း
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
 # 1. Android NDK အတွက် C++ Runtime ကို Static Link လုပ်ခိုင်းခြင်း (libc++_shared.so မလိုတော့အောင်)
 if(ANDROID)
     set(CMAKE_ANDROID_STL_TYPE "c++_static")

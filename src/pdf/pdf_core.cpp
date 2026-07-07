@@ -4,10 +4,6 @@
 
 #include "fpdfview.h"
 
-PdfCore::PdfCore() {
-  // FPDF_InitLibrary();
-}
-
 PdfCore::~PdfCore() {
   if (doc) {
     FPDF_CloseDocument(doc);

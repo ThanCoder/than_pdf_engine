@@ -13,23 +13,19 @@ external void pdfium_init();
 external void pdfium_destroy();
 
 /// PdfCore();
-@ffi.Native<ffi.Pointer<ffi.Void> Function()>()
-external ffi.Pointer<ffi.Void> pdf_core_create();
+@ffi.Native<pdf_core_t Function()>()
+external pdf_core_t pdf_core_create();
 
 /// ~PdfCore();
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
-external void pdf_core_destroy(ffi.Pointer<ffi.Void> pdf_core_ptr);
+@ffi.Native<ffi.Void Function(pdf_core_t)>()
+external void pdf_core_destroy(pdf_core_t pdf_core_ptr);
 
 /// bool openFile(const std::string& path, const std::string& password = "");
 @ffi.Native<
-  ffi.Bool Function(
-    ffi.Pointer<ffi.Void>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Char>,
-  )
+  ffi.Bool Function(pdf_core_t, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
 >()
 external bool pdf_core_openFile(
-  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  pdf_core_t pdf_core_ptr,
   ffi.Pointer<ffi.Char> path,
   ffi.Pointer<ffi.Char> password,
 );
@@ -38,14 +34,14 @@ external bool pdf_core_openFile(
 /// const std::string& password = "");
 @ffi.Native<
   ffi.Bool Function(
-    ffi.Pointer<ffi.Void>,
+    pdf_core_t,
     ffi.Pointer<ffi.UnsignedChar>,
     ffi.Int,
     ffi.Pointer<ffi.Char>,
   )
 >()
 external bool pdf_core_openMemoryRaw(
-  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  pdf_core_t pdf_core_ptr,
   ffi.Pointer<ffi.UnsignedChar> buffer,
   int buffer_Size,
   ffi.Pointer<ffi.Char> password,
@@ -55,79 +51,71 @@ external bool pdf_core_openMemoryRaw(
 /// const std::string& password = "");
 @ffi.Native<
   ffi.Bool Function(
-    ffi.Pointer<ffi.Void>,
+    pdf_core_t,
     ffi.Pointer<ffi.UnsignedChar>,
     ffi.Int,
     ffi.Pointer<ffi.Char>,
   )
 >()
 external bool pdf_core_openMemory64Raw(
-  ffi.Pointer<ffi.Void> pdf_core_ptr,
+  pdf_core_t pdf_core_ptr,
   ffi.Pointer<ffi.UnsignedChar> buffer,
   int buffer_Size,
   ffi.Pointer<ffi.Char> password,
 );
 
-@ffi.Native<ffi.Bool Function(ffi.Pointer<ffi.Void>)>()
-external bool pdf_core_fileOpened(ffi.Pointer<ffi.Void> pdf_core_ptr);
+@ffi.Native<ffi.Bool Function(pdf_core_t)>()
+external bool pdf_core_fileOpened(pdf_core_t pdf_core_ptr);
 
 /// int getPageCount();
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>)>()
-external int pdf_core_getPageCount(ffi.Pointer<ffi.Void> pdf_core_ptr);
+@ffi.Native<ffi.Int Function(pdf_core_t)>()
+external int pdf_core_getPageCount(pdf_core_t pdf_core_ptr);
 
 /// std::vector<PageSizeData> getAllPageSizes();
 /// return -> `page_size_data_ptr`
-@ffi.Native<ffi.Pointer<Page_Size_Data> Function(ffi.Pointer<ffi.Void>)>()
-external ffi.Pointer<Page_Size_Data> pdf_core_getAllPageSizes(
-  ffi.Pointer<ffi.Void> pdf_core_ptr,
+@ffi.Native<page_size_data_t Function(pdf_core_t, ffi.Pointer<ffi.Int>)>()
+external page_size_data_t pdf_core_getAllPageSizes(
+  pdf_core_t pdf_core_ptr,
+  ffi.Pointer<ffi.Int> out_count_ptr,
 );
 
 /// free -> `pdf_core_getAllPageSizes`
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+@ffi.Native<ffi.Void Function(page_size_data_t)>()
 external void pdf_core_free_getAllPageSizes(
-  ffi.Pointer<ffi.Void> page_size_data_ptr,
+  page_size_data_t page_size_data_ptr,
 );
 
-/// -------------------PDF Page-----------------------
 /// return -> `pdf_page_ptr*`
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Int)>()
-external ffi.Pointer<ffi.Void> pdf_page_create(
-  ffi.Pointer<ffi.Void> pdf_core_ptr,
-  int page_index,
-);
+@ffi.Native<pdf_page_t Function(pdf_core_t, ffi.Int)>()
+external pdf_page_t pdf_page_create(pdf_core_t pdf_core_ptr, int page_index);
 
 /// ~PdfPage();
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
-external void pdf_page_destroy(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Void Function(pdf_page_t)>()
+external void pdf_page_destroy(pdf_page_t pdf_page_ptr);
 
 /// core opened
 ///
 /// page opened
-@ffi.Native<ffi.Bool Function(ffi.Pointer<ffi.Void>)>()
-external bool pdf_page_isVaild(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Bool Function(pdf_page_t)>()
+external bool pdf_page_isVaild(pdf_page_t pdf_page_ptr);
 
-@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
-external double pdf_page_getWidth(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Double Function(pdf_page_t)>()
+external double pdf_page_getWidth(pdf_page_t pdf_page_ptr);
 
-@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
-external double pdf_page_getHeight(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Double Function(pdf_page_t)>()
+external double pdf_page_getHeight(pdf_page_t pdf_page_ptr);
 
-@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
-external double pdf_page_getWidthF(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Double Function(pdf_page_t)>()
+external double pdf_page_getWidthF(pdf_page_t pdf_page_ptr);
 
-@ffi.Native<ffi.Double Function(ffi.Pointer<ffi.Void>)>()
-external double pdf_page_getHeightF(ffi.Pointer<ffi.Void> pdf_page_ptr);
+@ffi.Native<ffi.Double Function(pdf_page_t)>()
+external double pdf_page_getHeightF(pdf_page_t pdf_page_ptr);
 
 @ffi.Native<
-  ffi.Bool Function(
-    ffi.Pointer<ffi.Void>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Int,
-    ffi.Int,
-  )
+  ffi.Bool Function(pdf_page_t, ffi.Pointer<ffi.Char>, ffi.Int, ffi.Int)
 >()
 external bool pdf_page_saveAsPngWH(
-  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  pdf_page_t pdf_page_ptr,
   ffi.Pointer<ffi.Char> out_path,
   int width,
   int height,
@@ -135,7 +123,7 @@ external bool pdf_page_saveAsPngWH(
 
 @ffi.Native<
   ffi.Bool Function(
-    ffi.Pointer<ffi.Void>,
+    pdf_page_t,
     ffi.Pointer<ffi.Char>,
     ffi.Int,
     ffi.Int,
@@ -143,7 +131,7 @@ external bool pdf_page_saveAsPngWH(
   )
 >()
 external bool pdf_page_saveAsJpgWH(
-  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  pdf_page_t pdf_page_ptr,
   ffi.Pointer<ffi.Char> out_path,
   int width,
   int height,
@@ -152,7 +140,7 @@ external bool pdf_page_saveAsJpgWH(
 
 @ffi.Native<
   ffi.Pointer<ffi.UnsignedChar> Function(
-    ffi.Pointer<ffi.Void>,
+    pdf_page_t,
     ffi.Pointer<ffi.Int>,
     ffi.Int,
     ffi.Int,
@@ -160,7 +148,7 @@ external bool pdf_page_saveAsJpgWH(
   )
 >()
 external ffi.Pointer<ffi.UnsignedChar> pdf_page_renderToJpegWH(
-  ffi.Pointer<ffi.Void> pdf_page_ptr,
+  pdf_page_t pdf_page_ptr,
   ffi.Pointer<ffi.Int> data_size,
   int width,
   int height,
@@ -9314,6 +9302,19 @@ final class Page_Size_Data extends ffi.Struct {
   @ffi.Float()
   external double height;
 }
+
+final class pdf_core_s extends ffi.Opaque {}
+
+typedef pdf_core_t = ffi.Pointer<pdf_core_s>;
+
+final class page_size_data_s extends ffi.Opaque {}
+
+typedef page_size_data_t = ffi.Pointer<page_size_data_s>;
+
+final class pdf_page_s extends ffi.Opaque {}
+
+/// -------------------PDF Page-----------------------
+typedef pdf_page_t = ffi.Pointer<pdf_page_s>;
 
 /// PDF text rendering modes
 enum FPDF_TEXT_RENDERMODE {

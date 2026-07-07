@@ -1,8 +1,8 @@
 #include "pdf_page.hpp"
 
 #include <fstream>
+#include <ios>
 #include <iostream>
-#include <stdexcept>
 
 #include "fpdfview.h"
 #include "pdf_core.hpp"
@@ -102,24 +102,45 @@ std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
     uint8_t* src_row = source_buffer + (y * stride);
     uint8_t* dst_row = rgba_buffer.data() + (y * targetWidth * 4);
 
+    // renderToRGBAWithDeviceWidth function ရဲ့ loop အတွင်းပိုင်းကို ဒီလိုလေး ပြောင်းရင်
+    // ပိုကောင်းပါတယ်
     for (int x = 0; x < targetWidth; ++x) {
       int src_idx = x * 4;
       int dst_idx = x * 4;
 
-      // Safe Check: targetWidth အတွင်းပဲမို့ စိတ်ချရပါတယ် (stride ထက် ကျော်မကျော် စစ်တာကို
-      // ပိုရှင်းအောင် လုပ်ထားပါတယ်)
-      if (src_idx + 3 < stride) {
+      // src_idx + 3 က stride ထက် ငယ်ရုံတင်မကဘဲ zero-bounds ဖြစ်ဖို့ပါ သေချာအောင် စစ်တာပါ
+      if (src_idx >= 0 && (src_idx + 3) < stride) {
         dst_row[dst_idx + 0] = src_row[src_idx + 2];  // R
         dst_row[dst_idx + 1] = src_row[src_idx + 1];  // G
         dst_row[dst_idx + 2] = src_row[src_idx + 0];  // B
         dst_row[dst_idx + 3] = src_row[src_idx + 3];  // A
       } else {
+        // Bound ကျော်သွားရင် safe ဖြစ်အောင် အဖြူရောင် ဖြည့်မယ်
         dst_row[dst_idx + 0] = 255;
         dst_row[dst_idx + 1] = 255;
         dst_row[dst_idx + 2] = 255;
         dst_row[dst_idx + 3] = 255;
       }
     }
+
+    // for (int x = 0; x < targetWidth; ++x) {
+    //   int src_idx = x * 4;
+    //   int dst_idx = x * 4;
+
+    //   // Safe Check: targetWidth အတွင်းပဲမို့ စိတ်ချရပါတယ် (stride ထက် ကျော်မကျော် စစ်တာကို
+    //   // ပိုရှင်းအောင် လုပ်ထားပါတယ်)
+    //   if (src_idx + 3 < stride) {
+    //     dst_row[dst_idx + 0] = src_row[src_idx + 2];  // R
+    //     dst_row[dst_idx + 1] = src_row[src_idx + 1];  // G
+    //     dst_row[dst_idx + 2] = src_row[src_idx + 0];  // B
+    //     dst_row[dst_idx + 3] = src_row[src_idx + 3];  // A
+    //   } else {
+    //     dst_row[dst_idx + 0] = 255;
+    //     dst_row[dst_idx + 1] = 255;
+    //     dst_row[dst_idx + 2] = 255;
+    //     dst_row[dst_idx + 3] = 255;
+    //   }
+    // }
   }
 
   FPDFBitmap_Destroy(bitmap);
@@ -129,7 +150,7 @@ std::vector<uint8_t> PdfPage::renderToRGBAWithDeviceWidth(int targetWidth,
 std::vector<uint8_t> PdfPage::renderToJpegWH(int targetWidth, int targetHeight,
                                              int quality) {
   std::vector<uint8_t> outputJpegData;
-  if (!isValid() || !page) return outputJpegData;
+  if (!isValid()) return outputJpegData;
 
   // 0 ဖြစ်နေရင် original size သုံးမယ်
   if (targetWidth == 0) targetWidth = width;
@@ -148,7 +169,12 @@ std::vector<uint8_t> PdfPage::renderToJpegWH(int targetWidth, int targetHeight,
   if (rgba_data.size() < total_pixels * 4) return outputJpegData;
 
   std::vector<uint8_t> rgb_data;
-  rgb_data.resize(total_pixels * 3);  // reserve အစား resize သုံးပါ
+  try {
+    rgb_data.resize(total_pixels * 3);
+  } catch (const std::bad_alloc&) {
+    return outputJpegData;  // Memory မလောက်ပါက crash မဖြစ်ဘဲ safe ဖြစ်ဖြစ် return
+                            // ပြန်မယ်
+  }
 
   for (size_t i = 0; i < total_pixels; ++i) {
     size_t rgba_idx = i * 4;
@@ -193,10 +219,15 @@ bool PdfPage::saveAsJpgWH(const std::string& outPath, int targetWidth,
   auto buff = renderToJpegWH(targetWidth, targetHeight, quality);
   if (buff.empty()) return false;
 
-  std::ofstream outFile(outPath);
+  std::ofstream outFile(outPath, std::ios::out | std::ios::binary);
   if (!outFile.is_open()) return false;
 
   outFile.write(reinterpret_cast<const char*>(buff.data()), buff.size());
+
+  if (!outFile.good()) {
+    outFile.close();
+    return false;
+  }
 
   outFile.flush();
   outFile.close();

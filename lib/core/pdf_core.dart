@@ -29,9 +29,10 @@ class PdfCore {
       final list = <PageSize>[];
       final pathPtr = path.toNativeUtf8();
       final passPtr = password == null ? nullptr : password.toNativeUtf8();
-      Pointer<Void> corePtr = nullptr;
-      Pointer<Page_Size_Data> sizesPtr = nullptr;
+      pdf_core_t corePtr = nullptr;
+      page_size_data_t sizesPtr = nullptr;
       String? error;
+      Pointer<Int> outCountPtr = calloc<Int>();
 
       try {
         corePtr = pdf_core_create();
@@ -45,12 +46,13 @@ class PdfCore {
         if (!isOpened) {
           error = 'Failed to open PDF file: $path';
         }
-        final pageCount = pdf_core_getPageCount(corePtr);
-        sizesPtr = pdf_core_getAllPageSizes(corePtr);
+        sizesPtr = pdf_core_getAllPageSizes(corePtr, outCountPtr);
+        final count = outCountPtr.value;
 
         if (sizesPtr != nullptr) {
-          for (var i = 0; i < pageCount; i++) {
-            final size = (sizesPtr + i).ref;
+          final arrPtr = sizesPtr.cast<Page_Size_Data>();
+          for (var i = 0; i < count; i++) {
+            final size = (arrPtr + i).ref;
             list.add(
               PageSize(pageIndex: i, width: size.width, height: size.height),
             );
@@ -58,11 +60,12 @@ class PdfCore {
         }
       } finally {
         calloc.free(pathPtr);
+        calloc.free(outCountPtr);
         if (passPtr != nullptr) {
           calloc.free(passPtr);
         }
         if (sizesPtr != nullptr) {
-          pdf_core_free_getAllPageSizes(sizesPtr.cast<Void>());
+          pdf_core_free_getAllPageSizes(sizesPtr);
         }
         if (corePtr != nullptr) {
           pdf_core_destroy(corePtr);
