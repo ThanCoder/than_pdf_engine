@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'dart:isolate';
 import 'package:ffi/ffi.dart';
+import 'package:than_pdf_engine/core/pdf_thumbnail_generator.dart';
 import 'package:than_pdf_engine/core/types.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
@@ -76,82 +77,53 @@ class PdfCore {
   }
 
   /// ### Gen Pdf Thumbnail JPG Type
+  ///
+  /// Used -> `PdfThumbnailGenerator`
   static Future<bool> genThumbnailJpg(
     String pdfPath,
-    String outpath, {
+    String outPath, {
     int pageIndex = 0,
     String? password,
     int width = 200,
     int height = 200,
     int quality = 70,
+    bool overrideImage = false,
   }) async {
-    return Isolate.run(() {
-      pdfium_init();
-      final pdfPathPtr = pdfPath.toNativeUtf8();
-      final outPathPtr = outpath.toNativeUtf8();
-      Pointer<Utf8> passwordPtr = nullptr;
-      if (password != null) {
-        passwordPtr = password.toNativeUtf8();
-      }
-      try {
-        pdf_util_saveJpgWithIndex(
-          pdfPathPtr.cast<Char>(),
-          password == null ? nullptr : passwordPtr.cast<Char>(),
-          outPathPtr.cast<Char>(),
-          pageIndex,
-          width,
-          height,
-          quality,
-        );
-      } catch (e) {
-        return false;
-      } finally {
-        calloc.free(pdfPathPtr);
-        calloc.free(outPathPtr);
-        if (passwordPtr != nullptr) {
-          calloc.free(passwordPtr);
-        }
-      }
-      return true;
-    });
+    return await PdfThumbnailGenerator.instance.generate(
+      pdfPath,
+      outPath,
+      height: height,
+      width: width,
+      overrideImage: overrideImage,
+      pageIndex: pageIndex,
+      password: password,
+      quality: quality,
+      type: .jpg,
+    );
   }
 
   /// ### Gen Pdf Thumbnail PNG Type
+  ///
+  /// Used -> `PdfThumbnailGenerator`
   static Future<bool> genThumbnailPng(
     String pdfPath,
-    String outpath, {
+    String outPath, {
     int pageIndex = 0,
     String? password,
     int width = 200,
     int height = 200,
+    bool overrideImage = false,
   }) async {
-    return Isolate.run(() {
-      pdfium_init();
-      final pdfPathPtr = pdfPath.toNativeUtf8();
-      final outPathPtr = outpath.toNativeUtf8();
-      Pointer<Utf8> passwordPtr = nullptr;
-      if (password != null) {
-        passwordPtr = password.toNativeUtf8();
-      }
-      try {
-        pdf_util_savePngWithIndex(
-          pdfPathPtr.cast<Char>(),
-          password == null ? nullptr : passwordPtr.cast<Char>(),
-          outPathPtr.cast<Char>(),
-          pageIndex,
-          width,
-          height,
-        );
-      } catch (e) {
-        return false;
-      } finally {
-        calloc.free(pdfPathPtr);
-        calloc.free(outPathPtr);
-        if (passwordPtr != nullptr) {
-          calloc.free(passwordPtr);
-        }
-      }
-      return true;
-    });
+    return await PdfThumbnailGenerator.instance.generate(
+      pdfPath,
+      outPath,
+      height: height,
+      width: width,
+      overrideImage: overrideImage,
+      pageIndex: pageIndex,
+      password: password,
+      quality: 70,
+      type: .png,
+    );
   }
 }

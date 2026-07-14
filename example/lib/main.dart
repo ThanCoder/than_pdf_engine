@@ -1,6 +1,9 @@
 // ignore_for_file: avoid_print
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:than_pdf_engine/core/pdf_thumbnail_generator.dart';
 import 'package:than_pdf_engine_example/my_page.dart';
 import 'package:than_pkg/than_pkg.dart';
 
@@ -25,19 +28,22 @@ class _MyAppState extends State<MyApp> {
           children: [
             TextButton(
               child: Text('Test'),
-              onPressed: () => goPage('/home/thancoder/Documents/test.pdf'),
+              onPressed: () => goPage('/home/thancoder/Documents/pdf/test.pdf'),
             ),
             TextButton(
               child: Text('Test 1'),
-              onPressed: () => goPage('/home/thancoder/Documents/test1.pdf'),
+              onPressed: () =>
+                  goPage('/home/thancoder/Documents/pdf/test1.pdf'),
             ),
             TextButton(
               child: Text('Test 2'),
-              onPressed: () => goPage('/home/thancoder/Documents/test2.pdf'),
+              onPressed: () =>
+                  goPage('/home/thancoder/Documents/pdf/test2.pdf'),
             ),
             TextButton(
               child: Text('Test 3'),
-              onPressed: () => goPage('/home/thancoder/Documents/test3.pdf'),
+              onPressed: () =>
+                  goPage('/home/thancoder/Documents/pdf/test3.pdf'),
             ),
             TextButton(
               onPressed: () => goPage('/storage/emulated/0/test.pdf'),
@@ -56,12 +62,26 @@ class _MyAppState extends State<MyApp> {
             if (!await ThanPkg.platform.isStoragePermissionGranted()) {
               await ThanPkg.platform.requestStoragePermission();
             }
-            // await TPdfCoreThumbnailer.extractImageAndSave(
-            //   pageIndex: 1,
-            //   '/home/thancoder/Documents/test2.pdf',
-            //   savePath: 'out.png',
-            //   overrideExistsImage: true,
-            // );
+            final g = PdfThumbnailGenerator.instance;
+
+            final dir = Directory('/home/thancoder/Documents/pdf');
+            final outDir = Directory('${dir.path}/thumbnails');
+            if (!outDir.existsSync()) {
+              outDir.createSync(recursive: false);
+            }
+            for (var file in dir.listSync(followLinks: false)) {
+              final name = file.path.split('/').last.split('.').first;
+              print('$name: Starting...');
+
+              final res = await g.generate(
+                file.path,
+                '${outDir.path}/$name.jpg',
+                overrideImage: true,
+                height: 200,
+                width: 200,
+              );
+              print('$name: $res');
+            }
           } catch (e) {
             debugPrint(e.toString());
           }

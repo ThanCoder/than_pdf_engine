@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, public_member_api_docs, sort_constructors_first
+// ignore_for_file: unused_field, non_constant_identifier_names, public_member_api_docs, sort_constructors_first
 // ignore_for_file: avoid_print
 
 import 'dart:ffi';
@@ -6,16 +6,15 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
 enum PdfWorkerCommand { stopWorker, getJpgImage }
 
-class WrokerImageResponse {
+class WorkerImageResponse {
   final double renderWidth;
   final double renderHeight;
   final TransferableTypedData trans;
-  WrokerImageResponse({
+  WorkerImageResponse({
     required this.renderWidth,
     required this.renderHeight,
     required this.trans,
@@ -35,18 +34,16 @@ class PdfBackgroundWorker {
   SendPort? _backgroundSendPort;
 
   /// ### Worker Initialize
-  ///
-  /// when if you do not use -> you should call [stop,dispose] method
-  ///
   Future<void> run(String path) async {
+    // PDF အသစ်ဖွင့်ရင် အရင် worker အဟောင်းကို စနစ်တကျ အရင်ပိတ်မယ်
     await stop();
 
     final receive = ReceivePort();
-    _isolate = await Isolate.spawn<(SendPort, String)>(_backgroundPdfWroker, (
-      receive.sendPort,
-      path,
-    ));
-    _backgroundSendPort = await receive.first;
+    _isolate = await Isolate.spawn<(SendPort, String)>(
+      _backgroundPdfWorker, 
+      (receive.sendPort, path),
+    );
+    _backgroundSendPort = await receive.first as SendPort?;
     receive.close();
   }
 
@@ -59,13 +56,14 @@ class PdfBackgroundWorker {
         'reply': receive.sendPort,
       });
       await receive.first;
+      _backgroundSendPort = null;
     }
-    _isolate?.kill(priority: Isolate.immediate);
-    _backgroundSendPort = null;
+    // Isolate.immediate နဲ့ သတ်မယ့်အစား သဘာဝအတိုင်း isolate ပိတ်သွားအောင် စောင့်ပါတယ်
+    _isolate = null;
   }
 
   /// ### Get Page Image
-  Future<TransferableTypedData?> requestPageImageJpg(
+  Future<WorkerImageResponse?> requestPageImageJpg(
     int pageIndex, {
     required double width,
     required double height,
@@ -73,6 +71,7 @@ class PdfBackgroundWorker {
   }) async {
     if (_backgroundSendPort == null) return null;
     final receive = ReceivePort();
+    
     try {
       _backgroundSendPort?.send({
         'command': PdfWorkerCommand.getJpgImage,
@@ -82,127 +81,163 @@ class PdfBackgroundWorker {
         'quality': quality,
         'reply': receive.sendPort,
       });
+      
       final res = await receive.first;
       receive.close();
 
-      if (res is TransferableTypedData) {
-        return res;
+      if (res is Map) {
+        return WorkerImageResponse(
+          renderWidth: res['width'] as double,
+          renderHeight: res['height'] as double,
+          trans: res['trans'] as TransferableTypedData,
+        );
       }
-      // print('map is ${res.runtimeType}');
       return null;
     } catch (e) {
-      print('[PdfBackgroundWorker:requestPageImageRgbaLowQuality]: $e');
+      print('[PdfBackgroundWorker:requestPageImageJpg]: $e');
       receive.close();
       return null;
     }
   }
 
-  /// ### Stop Worker
+  /// ### Dispose Worker
   Future<void> dispose() async {
     await stop();
   }
 }
 
-/// run in background
-Future<void> _backgroundPdfWroker((SendPort, String) args) async {
+Future<void> _backgroundPdfWorker((SendPort, String) args) async {
   final sendPort = args.$1;
   final path = args.$2;
+
   try {
     final receive = ReceivePort();
     sendPort.send(receive.sendPort);
 
+    pdfium_init();
+
     final pdfCorePtr = pdf_core_create();
     final pathPtr = path.toNativeUtf8();
     pdf_core_openFile(pdfCorePtr, pathPtr.cast<Char>(), nullptr);
-    //free လုပ်ဖို့မမေ့နဲ့အုံး
     calloc.free(pathPtr);
 
-    // လက်ရှိ Render လုပ်ဖို့ တန်းစီနေတဲ့ (နောက်ဆုံးဝင်လာတဲ့) Page Index ကို မှတ်ရန်
+    // Queue တွက် လိုအပ်တဲ့ variable များ
     int? pendingPageIndex;
     SendPort? pendingReplyPort;
+    double? pendingWidth;
+    double? pendingHeight;
+    int? pendingQuality;
+
     bool isProcessing = false;
 
-    void processQueue(double width, double height, int quality) async {
+    // Process Queue Function
+    Future<void> processQueue() async {
       if (isProcessing || pendingPageIndex == null) return;
 
       isProcessing = true;
 
+      // လက်ရှိလုပ်မယ့် အလုပ်ကို parameter ထုတ်ယူမယ်
       final pageIndex = pendingPageIndex!;
       final replyPort = pendingReplyPort!;
+      final width = pendingWidth!;
+      final height = pendingHeight!;
+      final quality = pendingQuality!;
 
-      // သုံးပြီးသား variable တွေကို ရှင်းထုတ်
+      // Queue ထဲက data ကို သုံးပြီးပြီဖြစ်လို့ reset လုပ်မယ်
       pendingPageIndex = null;
       pendingReplyPort = null;
+      pendingWidth = null;
+      pendingHeight = null;
+      pendingQuality = null;
 
       try {
-        // final page = pdf_core_getPage(pdf, pageIndex);
         final pagePtr = pdf_page_create(pdfCorePtr, pageIndex);
-
         final bufferSizePtr = calloc<Int>();
 
-        ///native ဆီကနေ jpg image data pointer
-        final render_jpg_buff = pdf_page_renderToJpegWH(
+        /// Native ဆီကနေ jpg image data pointer ယူမယ်
+        final renderJpgBuff = pdf_page_renderToJpegWH(
           pagePtr,
           bufferSizePtr,
           width.toInt(),
           height.toInt(),
           quality,
         );
-        final rgbaBytes = render_jpg_buff.cast<Uint8>().asTypedList(
+
+        // Native memory ကို Dart Typed List အဖြစ် view လုပ်မယ်
+        final rgbaBytes = renderJpgBuff.cast<Uint8>().asTypedList(
           bufferSizePtr.value,
         );
 
+        // Dart memory space ပေါ်သို့ copy ကူးယူမယ်
         final dartBytes = Uint8List.fromList(rgbaBytes);
-        // print('data size: ${dartBytes.length}');
+
+        // Memory transfer မြန်စေရန် TransferableTypedData သုံးမယ်
         final trans = TransferableTypedData.fromList([dartBytes]);
 
-        pdf_page_free_renderToJpegWH(render_jpg_buff);
+        // Native Pointer များကို သန့်ရှင်းရေးလုပ်မယ်
+        pdf_page_free_renderToJpegWH(renderJpgBuff);
         pdf_page_destroy(pagePtr);
         calloc.free(bufferSizePtr);
 
-        replyPort.send(trans);
+        // Main thread ဆီကို width, height တွေပါ ထည့်ပြီး Map အနေနဲ့ ပို့ပေးမယ်
+        replyPort.send({
+          'width': width,
+          'height': height,
+          'trans': trans,
+        });
       } catch (e) {
         print('[render:error]: $e');
-        replyPort.send(null); // error ဖြစ်ရင်လည်း UI ကို null ပြန်ပေးရမယ်
+        replyPort.send(null); 
+      } finally {
+        isProcessing = false;
+        // နောက်ထပ် Request ကျန်ခဲ့ရင် ချက်ချင်း စစ်ဆေးပြီး ထပ် run မယ်
+        Future.microtask(() => processQueue());
       }
-
-      isProcessing = false;
-
-      // နောက်ထပ်ကျန်တဲ့ Request အသစ်ကို ဆက်လုပ်
-      processQueue(width, height, quality);
     }
 
     receive.listen((msg) {
-      // message
       if (msg is Map) {
         final command = msg['command'] as PdfWorkerCommand;
-        // Stop
-        if (command == .stopWorker) {
+
+        // 1. Stop Worker Command
+        if (command == PdfWorkerCommand.stopWorker) {
           final reply = msg['reply'] as SendPort;
+          
+          // ကျန်နေသေးတဲ့ pending request ရှိရင် null ပြန်ပေးပြီး ရှင်းထုတ်မယ်
+          if (pendingReplyPort != null) {
+            pendingReplyPort!.send(null);
+          }
+          
           pdf_core_destroy(pdfCorePtr);
           reply.send(null);
+          receive.close(); // Port ကို ပိတ်ပြီး isolate ကို ရပ်တန့်စေမယ်
+          return;
         }
 
-        // RGBA image Low Quality
-        if (command == .getJpgImage) {
-          final width = msg['width'] as double;
-          final height = msg['height'] as double;
-          final quality = msg['quality'] as int;
+        // 2. Get JPG Image Command
+        if (command == PdfWorkerCommand.getJpgImage) {
+          final reply = msg['reply'] as SendPort;
 
-          if (pendingReplyPort != null && pendingReplyPort != msg['reply']) {
-            pendingReplyPort!.send(
-              null,
-            ); // အရင်ကောင်ကို Skip ကြောင်း UI ဆီ အကြောင်းကြား
+          // **ဒီနေရာက အရေးကြီးဆုံးပြင်ဆင်မှုဖြစ်ပါတယ်**
+          // လက်ရှိ queue ထဲမှာ အလုပ်တစ်ခု စောင့်နေတုန်း (သို့မဟုတ်) အလုပ်လုပ်နေတုန်းမှာ 
+          // အလုပ်အသစ် ထပ်ဝင်လာရင် အရင်လူကို Freeze မဖြစ်သွားအောင် ချက်ချင်း null ပြန်ပေးရပါမယ်။
+          if (pendingReplyPort != null && pendingReplyPort != reply) {
+            pendingReplyPort!.send(null);
           }
 
+          // Request အသစ်ကို Queue variable တွေထဲ ထည့်လိုက်မယ်
           pendingPageIndex = msg['pageIndex'] as int;
-          pendingReplyPort = msg['reply'] as SendPort;
+          pendingReplyPort = reply;
+          pendingWidth = msg['width'] as double;
+          pendingHeight = msg['height'] as double;
+          pendingQuality = msg['quality'] as int;
 
-          processQueue(width, height, quality);
+          // Queue ကို စတင် run မယ်
+          processQueue();
         }
       }
     });
   } catch (e) {
-    print('[_backgroundPdfWroker:error]: $e');
+    print('[_backgroundPdfWorker:error]: $e');
   }
 }

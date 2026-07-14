@@ -32,7 +32,7 @@ class _PdfPageItemState extends State<PdfPageItem> {
 
   @override
   void initState() {
-    fetchImage(20);
+    fetchImage(40);
     super.initState();
   }
 
@@ -57,7 +57,7 @@ class _PdfPageItemState extends State<PdfPageItem> {
         isHighQuality = false;
         isLoading = false;
       });
-      fetchImage(20);
+      fetchImage(40);
     }
   }
 
@@ -71,17 +71,22 @@ class _PdfPageItemState extends State<PdfPageItem> {
     if (isLoading || isHighQuality) return;
     isLoading = true;
 
-    final res = await widget.backgroundWorker.requestPageImageJpg(
-      widget.pageOffset.pageIndex,
-      width: widget.pageOffset.width,
-      height: widget.pageOffset.height,
-      quality: quality,
-    );
+    final WorkerImageResponse? res = await widget.backgroundWorker
+        .requestPageImageJpg(
+          widget.pageOffset.pageIndex,
+          width: widget.pageOffset.width,
+          height: widget.pageOffset.height,
+          quality: quality,
+        );
     if (res != null) {
       if (quality > 50) {
-        highQualityImage = Uint8List.fromList(res.materialize().asUint8List());
+        highQualityImage = Uint8List.fromList(
+          res.trans.materialize().asUint8List(),
+        );
       } else {
-        lowQualityImage = Uint8List.fromList(res.materialize().asUint8List());
+        lowQualityImage = Uint8List.fromList(
+          res.trans.materialize().asUint8List(),
+        );
       }
       isHighQuality = quality > 50;
     }
