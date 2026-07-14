@@ -5283,7 +5283,6 @@ external int FPDFImageObj_LoadJpegFileInline(
   ffi.Pointer<FPDF_FILEACCESS> file_access,
 );
 
-/// TODO(thestig): Start deprecating this once FPDFPageObj_SetMatrix() is stable.
 ///
 /// Set the transform matrix of |image_object|.
 ///
