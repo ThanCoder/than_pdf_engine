@@ -3,12 +3,11 @@
 
 import 'dart:ffi';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
-enum PdfWorkerCommand { stopWorker, getJpgImage, getPngImage }
+enum PdfWorkerCommand { stopWorker, getImage }
 
 enum PdfWorkerRequestImageType { jpg, png }
 
@@ -64,6 +63,8 @@ class PdfBackgroundWorker {
     _isolate = null;
   }
 
+  /// ### Get Page Image
+  ///
   Future<WorkerImageResponse?> requestPageImage(
     int pageIndex, {
     required double width,
@@ -71,20 +72,21 @@ class PdfBackgroundWorker {
     int quality = 90,
     PdfWorkerRequestImageType type = .jpg,
   }) async {
-    var command = PdfWorkerCommand.getJpgImage;
-    if (type == .png) {
-      command = .getPngImage;
-    }
     return await _requestPageImage(
       pageIndex,
-      command: command,
+      command: PdfWorkerCommand.getImage,
+
       width: width,
       height: height,
       quality: quality,
     );
   }
 
-  /// ### Get Page Image
+  /// @deprecated
+  /// [requestPageImageJpg] အစား [requestPageImage] ကို အသုံးပြုပါ။
+  @Deprecated(
+    'Use requestPageImage instead. This method will be removed in future updates.',
+  )
   Future<WorkerImageResponse?> requestPageImageJpg(
     int pageIndex, {
     required double width,
@@ -95,7 +97,8 @@ class PdfBackgroundWorker {
       pageIndex,
       width: width,
       height: height,
-      command: .getJpgImage,
+      command: .getImage,
+      imageType: .jpg,
     );
   }
 
@@ -104,6 +107,7 @@ class PdfBackgroundWorker {
     required double width,
     required double height,
     required PdfWorkerCommand command,
+    PdfWorkerRequestImageType imageType = .jpg,
     int quality = 90,
   }) async {
     if (_backgroundSendPort == null) return null;
@@ -112,6 +116,7 @@ class PdfBackgroundWorker {
     try {
       _backgroundSendPort?.send({
         'command': command,
+        'imageType': imageType,
         'pageIndex': pageIndex,
         'width': width,
         'height': height,
@@ -164,6 +169,7 @@ Future<void> _backgroundPdfWorker((SendPort, String) args) async {
     double? pendingWidth;
     double? pendingHeight;
     int? pendingQuality;
+    PdfWorkerRequestImageType imageType = .jpg;
 
     bool isProcessing = false;
 
@@ -189,30 +195,39 @@ Future<void> _backgroundPdfWorker((SendPort, String) args) async {
 
       try {
         final pagePtr = pdf_page_create(pdfCorePtr, pageIndex);
-        final bufferSizePtr = calloc<Int>();
 
-        /// Native ဆီကနေ jpg image data pointer ယူမယ်
-        final renderJpgBuff = pdf_page_renderToJpegWH(
-          pagePtr,
-          bufferSizePtr,
-          width.toInt(),
-          height.toInt(),
-          quality,
-        );
+        final bufferSizePtr = calloc<Int>();
+        Pointer<UnsignedChar> renderImageBuff = nullptr;
+
+        if (imageType == .png) {
+          // png
+          renderImageBuff = pdf_page_renderToPngWH(
+            pagePtr,
+            bufferSizePtr,
+            width.toInt(),
+            height.toInt(),
+          );
+        } else {
+          /// Native ဆီကနေ jpg image data pointer ယူမယ်
+          renderImageBuff = pdf_page_renderToJpegWH(
+            pagePtr,
+            bufferSizePtr,
+            width.toInt(),
+            height.toInt(),
+            quality,
+          );
+        }
 
         // Native memory ကို Dart Typed List အဖြစ် view လုပ်မယ်
-        final rgbaBytes = renderJpgBuff.cast<Uint8>().asTypedList(
+        final rgbaBytes = renderImageBuff.cast<Uint8>().asTypedList(
           bufferSizePtr.value,
         );
 
-        // Dart memory space ပေါ်သို့ copy ကူးယူမယ်
-        final dartBytes = Uint8List.fromList(rgbaBytes);
-
         // Memory transfer မြန်စေရန် TransferableTypedData သုံးမယ်
-        final trans = TransferableTypedData.fromList([dartBytes]);
+        final trans = TransferableTypedData.fromList([rgbaBytes]);
 
         // Native Pointer များကို သန့်ရှင်းရေးလုပ်မယ်
-        pdf_page_free_renderToJpegWH(renderJpgBuff);
+        pdf_page_free_renderToJpegWH(renderImageBuff);
         pdf_page_destroy(pagePtr);
         calloc.free(bufferSizePtr);
 
@@ -248,7 +263,9 @@ Future<void> _backgroundPdfWorker((SendPort, String) args) async {
         }
 
         // 2. Get JPG Image Command
-        if (command == PdfWorkerCommand.getJpgImage) {
+        if (command == PdfWorkerCommand.getImage) {
+          imageType = msg['imageType'] as PdfWorkerRequestImageType;
+
           final reply = msg['reply'] as SendPort;
 
           // **ဒီနေရာက အရေးကြီးဆုံးပြင်ဆင်မှုဖြစ်ပါတယ်**

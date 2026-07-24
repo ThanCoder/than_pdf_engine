@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:than_pdf_engine/core/pdf_thumbnail_generator.dart';
+import 'package:than_pdf_engine/than_pdf_engine.dart';
 import 'package:than_pdf_engine_example/my_page.dart';
 import 'package:than_pkg/than_pkg.dart';
 
