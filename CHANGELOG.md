@@ -1,5 +1,9 @@
 # 0.4.0
 
+## Dart
+- Deprecated `requestPageImageJpg`
++ Added `requestPageImage`
+
 ## Native C++
 + Added `pdf_page_renderToPngWH`
 + Added `pdf_page_free_renderToPngWH`

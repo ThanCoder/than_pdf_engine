@@ -75,10 +75,10 @@ class PdfBackgroundWorker {
     return await _requestPageImage(
       pageIndex,
       command: PdfWorkerCommand.getImage,
-
       width: width,
       height: height,
       quality: quality,
+      imageType: type,
     );
   }
 
