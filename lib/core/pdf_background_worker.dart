@@ -8,7 +8,9 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
-enum PdfWorkerCommand { stopWorker, getJpgImage }
+enum PdfWorkerCommand { stopWorker, getJpgImage, getPngImage }
+
+enum PdfWorkerRequestImageType { jpg, png }
 
 class WorkerImageResponse {
   final double renderWidth;
@@ -39,10 +41,10 @@ class PdfBackgroundWorker {
     await stop();
 
     final receive = ReceivePort();
-    _isolate = await Isolate.spawn<(SendPort, String)>(
-      _backgroundPdfWorker, 
-      (receive.sendPort, path),
-    );
+    _isolate = await Isolate.spawn<(SendPort, String)>(_backgroundPdfWorker, (
+      receive.sendPort,
+      path,
+    ));
     _backgroundSendPort = await receive.first as SendPort?;
     receive.close();
   }
@@ -62,6 +64,26 @@ class PdfBackgroundWorker {
     _isolate = null;
   }
 
+  Future<WorkerImageResponse?> requestPageImage(
+    int pageIndex, {
+    required double width,
+    required double height,
+    int quality = 90,
+    PdfWorkerRequestImageType type = .jpg,
+  }) async {
+    var command = PdfWorkerCommand.getJpgImage;
+    if (type == .png) {
+      command = .getPngImage;
+    }
+    return await _requestPageImage(
+      pageIndex,
+      command: command,
+      width: width,
+      height: height,
+      quality: quality,
+    );
+  }
+
   /// ### Get Page Image
   Future<WorkerImageResponse?> requestPageImageJpg(
     int pageIndex, {
@@ -69,19 +91,34 @@ class PdfBackgroundWorker {
     required double height,
     int quality = 90,
   }) async {
+    return await _requestPageImage(
+      pageIndex,
+      width: width,
+      height: height,
+      command: .getJpgImage,
+    );
+  }
+
+  Future<WorkerImageResponse?> _requestPageImage(
+    int pageIndex, {
+    required double width,
+    required double height,
+    required PdfWorkerCommand command,
+    int quality = 90,
+  }) async {
     if (_backgroundSendPort == null) return null;
     final receive = ReceivePort();
-    
+
     try {
       _backgroundSendPort?.send({
-        'command': PdfWorkerCommand.getJpgImage,
+        'command': command,
         'pageIndex': pageIndex,
         'width': width,
         'height': height,
         'quality': quality,
         'reply': receive.sendPort,
       });
-      
+
       final res = await receive.first;
       receive.close();
 
@@ -180,14 +217,10 @@ Future<void> _backgroundPdfWorker((SendPort, String) args) async {
         calloc.free(bufferSizePtr);
 
         // Main thread ဆီကို width, height တွေပါ ထည့်ပြီး Map အနေနဲ့ ပို့ပေးမယ်
-        replyPort.send({
-          'width': width,
-          'height': height,
-          'trans': trans,
-        });
+        replyPort.send({'width': width, 'height': height, 'trans': trans});
       } catch (e) {
         print('[render:error]: $e');
-        replyPort.send(null); 
+        replyPort.send(null);
       } finally {
         isProcessing = false;
         // နောက်ထပ် Request ကျန်ခဲ့ရင် ချက်ချင်း စစ်ဆေးပြီး ထပ် run မယ်
@@ -202,12 +235,12 @@ Future<void> _backgroundPdfWorker((SendPort, String) args) async {
         // 1. Stop Worker Command
         if (command == PdfWorkerCommand.stopWorker) {
           final reply = msg['reply'] as SendPort;
-          
+
           // ကျန်နေသေးတဲ့ pending request ရှိရင် null ပြန်ပေးပြီး ရှင်းထုတ်မယ်
           if (pendingReplyPort != null) {
             pendingReplyPort!.send(null);
           }
-          
+
           pdf_core_destroy(pdfCorePtr);
           reply.send(null);
           receive.close(); // Port ကို ပိတ်ပြီး isolate ကို ရပ်တန့်စေမယ်
@@ -219,7 +252,7 @@ Future<void> _backgroundPdfWorker((SendPort, String) args) async {
           final reply = msg['reply'] as SendPort;
 
           // **ဒီနေရာက အရေးကြီးဆုံးပြင်ဆင်မှုဖြစ်ပါတယ်**
-          // လက်ရှိ queue ထဲမှာ အလုပ်တစ်ခု စောင့်နေတုန်း (သို့မဟုတ်) အလုပ်လုပ်နေတုန်းမှာ 
+          // လက်ရှိ queue ထဲမှာ အလုပ်တစ်ခု စောင့်နေတုန်း (သို့မဟုတ်) အလုပ်လုပ်နေတုန်းမှာ
           // အလုပ်အသစ် ထပ်ဝင်လာရင် အရင်လူကို Freeze မဖြစ်သွားအောင် ချက်ချင်း null ပြန်ပေးရပါမယ်။
           if (pendingReplyPort != null && pendingReplyPort != reply) {
             pendingReplyPort!.send(null);

@@ -49,8 +49,6 @@ if(LINUX)
     # Linux Desktop အတွက်
     target_link_libraries(pdf_engine PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux/x64/libpdfium.so
-        glfw
-        GL
     )
     # 💡 Target ရဲ့ Type ကို စစ်ဆေးခြင်း
     get_target_property(TARGET_TYPE pdf_engine TYPE)

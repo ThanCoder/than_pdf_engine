@@ -1,3 +1,10 @@
+# 0.4.0
+
+## Native C++
++ Added `pdf_page_renderToPngWH`
++ Added `pdf_page_free_renderToPngWH`
++ Changed `pdf_core_getAllPageSizes` -> `C++ Codes`
+
 # 0.3.0
 
 - Added `PdfThumbnailGenerator`

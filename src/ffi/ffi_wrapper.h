@@ -1,5 +1,5 @@
-#include <stdbool.h>  // 💡 [ဒီကောင်လေး ထပ်ဖြည့်ပေးပါ] bool ကို နားလည်စေရန်
-#include <stdint.h>   // uint8_t ကို နားလည်စေရန်
+#include <stdbool.h> // 💡 [ဒီကောင်လေး ထပ်ဖြည့်ပေးပါ] bool ကို နားလည်စေရန်
+#include <stdint.h>  // uint8_t ကို နားလည်စေရန်
 #include <stdlib.h>
 
 #if _WIN32
@@ -33,7 +33,7 @@ typedef struct {
   float height;
 } Page_Size_Data;
 
-typedef struct pdf_core_s* pdf_core_t;
+typedef struct pdf_core_s *pdf_core_t;
 
 //  PdfCore();
 pdf_core_t pdf_core_create();
@@ -42,36 +42,36 @@ pdf_core_t pdf_core_create();
 void pdf_core_destroy(pdf_core_t pdf_core_ptr);
 
 // bool openFile(const std::string& path, const std::string& password = "");
-bool pdf_core_openFile(pdf_core_t pdf_core_ptr, const char* path,
-                       const char* password);
+bool pdf_core_openFile(pdf_core_t pdf_core_ptr, const char *path,
+                       const char *password);
 // bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
 //                    const std::string& password = "");
 bool pdf_core_openMemoryRaw(pdf_core_t pdf_core_ptr,
-                            const unsigned char* buffer, int buffer_Size,
-                            const char* password);
+                            const unsigned char *buffer, int buffer_Size,
+                            const char *password);
 
 // bool openMemory64Raw(const unsigned char* dataBuffer, int dataSize,
 //                      const std::string& password = "");
 bool pdf_core_openMemory64Raw(pdf_core_t pdf_core_ptr,
-                              const unsigned char* buffer, int buffer_Size,
-                              const char* password);
+                              const unsigned char *buffer, int buffer_Size,
+                              const char *password);
 
 bool pdf_core_fileOpened(pdf_core_t pdf_core_ptr);
 
 // int getPageCount();
 int pdf_core_getPageCount(pdf_core_t pdf_core_ptr);
 
-typedef struct page_size_data_s* page_size_data_t;
+typedef struct page_size_data_s *page_size_data_t;
 
 // std::vector<PageSizeData> getAllPageSizes();
 // return -> `page_size_data_ptr`
 page_size_data_t pdf_core_getAllPageSizes(pdf_core_t pdf_core_ptr,
-                                          int* out_count_ptr);
+                                          int *out_count_ptr);
 // free -> `pdf_core_getAllPageSizes`
 void pdf_core_free_getAllPageSizes(page_size_data_t page_size_data_ptr);
 
 //-------------------PDF Page-----------------------
-typedef struct pdf_page_s* pdf_page_t;
+typedef struct pdf_page_s *pdf_page_t;
 // return -> `pdf_page_ptr*`
 pdf_page_t pdf_page_create(pdf_core_t pdf_core_ptr, int page_index);
 //  ~PdfPage();
@@ -87,21 +87,26 @@ double pdf_page_getHeight(pdf_page_t pdf_page_ptr);
 double pdf_page_getWidthF(pdf_page_t pdf_page_ptr);
 double pdf_page_getHeightF(pdf_page_t pdf_page_ptr);
 
-bool pdf_page_saveAsPngWH(pdf_page_t pdf_page_ptr, const char* out_path,
+bool pdf_page_saveAsPngWH(pdf_page_t pdf_page_ptr, const char *out_path,
                           int width, int height);
-bool pdf_page_saveAsJpgWH(pdf_page_t pdf_page_ptr, const char* out_path,
+bool pdf_page_saveAsJpgWH(pdf_page_t pdf_page_ptr, const char *out_path,
                           int width, int height, int quality);
-
-unsigned char* pdf_page_renderToJpegWH(pdf_page_t pdf_page_ptr, int* data_size,
+/// Render To Jpg
+unsigned char *pdf_page_renderToJpegWH(pdf_page_t pdf_page_ptr, int *data_size,
                                        int width, int height, int quality);
-void pdf_page_free_renderToJpegWH(unsigned char* render_jpg_buff);
+void pdf_page_free_renderToJpegWH(unsigned char *render_jpg_buff);
+
+/// Render To Png
+unsigned char *pdf_page_renderToPngWH(pdf_page_t pdf_page_ptr, int *data_size,
+                                      int width, int height);
+void pdf_page_free_renderToPngWH(unsigned char *render_png_buff);
 
 //********************PDF Util *********************** */
-bool pdf_util_saveJpgWithIndex(const char* pdf_path, const char* password,
-                               const char* out_path, int page_index, int width,
+bool pdf_util_saveJpgWithIndex(const char *pdf_path, const char *password,
+                               const char *out_path, int page_index, int width,
                                int height, int quality);
-bool pdf_util_savePngWithIndex(const char* pdf_path, const char* password,
-                               const char* out_path, int page_index, int width,
+bool pdf_util_savePngWithIndex(const char *pdf_path, const char *password,
+                               const char *out_path, int page_index, int width,
                                int height);
 
 #ifdef __cplusplus

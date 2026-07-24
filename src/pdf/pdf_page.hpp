@@ -10,8 +10,8 @@ extern "C" {
 #include <stb_image_write.h>
 }
 class PdfPage {
- private:
-  PdfCore* core = nullptr;
+private:
+  PdfCore *core = nullptr;
   FPDF_PAGE page = nullptr;
   FPDF_BITMAP current_bitmap = nullptr;
   double width = 0;
@@ -19,11 +19,11 @@ class PdfPage {
   double width_f = 0;
   double height_f = 0;
 
- public:
-  PdfPage(PdfCore* core, int pageIndex);
+public:
+  PdfPage(PdfCore *core, int pageIndex);
   ~PdfPage();
 
-  std::uint8_t* getBitmapSourcePtr(int targetWidth, int targetHeight);
+  std::uint8_t *getBitmapSourcePtr(int targetWidth, int targetHeight);
 
   std::vector<uint8_t> renderToRGBAWithDeviceWidth(int targetWidth,
                                                    int targetHeight);
@@ -38,8 +38,11 @@ class PdfPage {
 
   std::vector<uint8_t> renderToJpegWH(int targetWidth, int targetHeight,
                                       int quality = 90);
-  bool saveAsPngWH(const std::string& outPath, int targetWidth,
-                   int targetHeight);
-  bool saveAsJpgWH(const std::string& outPath, int targetWidth,
+
+  std::vector<uint8_t> renderToPngWH(int targetWidth, int targetHeight);
+
+  bool saveAsJpgWH(const std::string &outPath, int targetWidth,
                    int targetHeight, int quality = 90);
+  bool saveAsPngWH(const std::string &outPath, int targetWidth,
+                   int targetHeight);
 };
