@@ -4,23 +4,21 @@
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
-/// FPDF_InitLibrary
+/// ============================================================
+/// PDFium
+/// ============================================================
 @ffi.Native<ffi.Void Function()>()
 external void pdfium_init();
 
-/// FPDF_DestroyLibrary()
 @ffi.Native<ffi.Void Function()>()
 external void pdfium_destroy();
 
-/// PdfCore();
 @ffi.Native<pdf_core_t Function()>()
 external pdf_core_t pdf_core_create();
 
-/// ~PdfCore();
 @ffi.Native<ffi.Void Function(pdf_core_t)>()
 external void pdf_core_destroy(pdf_core_t pdf_core_ptr);
 
-/// bool openFile(const std::string& path, const std::string& password = "");
 @ffi.Native<
   ffi.Bool Function(pdf_core_t, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
 >()
@@ -30,8 +28,6 @@ external bool pdf_core_openFile(
   ffi.Pointer<ffi.Char> password,
 );
 
-/// bool openMemoryRaw(const unsigned char* dataBuffer, int dataSize,
-/// const std::string& password = "");
 @ffi.Native<
   ffi.Bool Function(
     pdf_core_t,
@@ -43,12 +39,10 @@ external bool pdf_core_openFile(
 external bool pdf_core_openMemoryRaw(
   pdf_core_t pdf_core_ptr,
   ffi.Pointer<ffi.UnsignedChar> buffer,
-  int buffer_Size,
+  int buffer_size,
   ffi.Pointer<ffi.Char> password,
 );
 
-/// bool openMemory64Raw(const unsigned char* dataBuffer, int dataSize,
-/// const std::string& password = "");
 @ffi.Native<
   ffi.Bool Function(
     pdf_core_t,
@@ -60,42 +54,33 @@ external bool pdf_core_openMemoryRaw(
 external bool pdf_core_openMemory64Raw(
   pdf_core_t pdf_core_ptr,
   ffi.Pointer<ffi.UnsignedChar> buffer,
-  int buffer_Size,
+  int buffer_size,
   ffi.Pointer<ffi.Char> password,
 );
 
 @ffi.Native<ffi.Bool Function(pdf_core_t)>()
 external bool pdf_core_fileOpened(pdf_core_t pdf_core_ptr);
 
-/// int getPageCount();
 @ffi.Native<ffi.Int Function(pdf_core_t)>()
 external int pdf_core_getPageCount(pdf_core_t pdf_core_ptr);
 
-/// std::vector<PageSizeData> getAllPageSizes();
-/// return -> `page_size_data_ptr`
 @ffi.Native<page_size_data_t Function(pdf_core_t, ffi.Pointer<ffi.Int>)>()
 external page_size_data_t pdf_core_getAllPageSizes(
   pdf_core_t pdf_core_ptr,
   ffi.Pointer<ffi.Int> out_count_ptr,
 );
 
-/// free -> `pdf_core_getAllPageSizes`
 @ffi.Native<ffi.Void Function(page_size_data_t)>()
 external void pdf_core_free_getAllPageSizes(
   page_size_data_t page_size_data_ptr,
 );
 
-/// return -> `pdf_page_ptr*`
 @ffi.Native<pdf_page_t Function(pdf_core_t, ffi.Int)>()
 external pdf_page_t pdf_page_create(pdf_core_t pdf_core_ptr, int page_index);
 
-/// ~PdfPage();
 @ffi.Native<ffi.Void Function(pdf_page_t)>()
 external void pdf_page_destroy(pdf_page_t pdf_page_ptr);
 
-/// core opened
-///
-/// page opened
 @ffi.Native<ffi.Bool Function(pdf_page_t)>()
 external bool pdf_page_isVaild(pdf_page_t pdf_page_ptr);
 
@@ -111,6 +96,9 @@ external double pdf_page_getWidthF(pdf_page_t pdf_page_ptr);
 @ffi.Native<ffi.Double Function(pdf_page_t)>()
 external double pdf_page_getHeightF(pdf_page_t pdf_page_ptr);
 
+/// ============================================================
+/// Save
+/// ============================================================
 @ffi.Native<
   ffi.Bool Function(pdf_page_t, ffi.Pointer<ffi.Char>, ffi.Int, ffi.Int)
 >()
@@ -138,7 +126,9 @@ external bool pdf_page_saveAsJpgWH(
   int quality,
 );
 
-/// Render To Jpg
+/// ============================================================
+/// Render JPEG
+/// ============================================================
 @ffi.Native<
   ffi.Pointer<ffi.UnsignedChar> Function(
     pdf_page_t,
@@ -161,7 +151,9 @@ external void pdf_page_free_renderToJpegWH(
   ffi.Pointer<ffi.UnsignedChar> render_jpg_buff,
 );
 
-/// Render To Png
+/// ============================================================
+/// Render PNG
+/// ============================================================
 @ffi.Native<
   ffi.Pointer<ffi.UnsignedChar> Function(
     pdf_page_t,
@@ -182,7 +174,9 @@ external void pdf_page_free_renderToPngWH(
   ffi.Pointer<ffi.UnsignedChar> render_png_buff,
 );
 
-/// ********************PDF Util *********************** */
+/// ============================================================
+/// PDF Util
+/// ============================================================
 @ffi.Native<
   ffi.Bool Function(
     ffi.Pointer<ffi.Char>,
@@ -1302,6 +1296,1209 @@ external int FPDF_GetXFAPacketContent(
   ffi.Pointer<ffi.UnsignedLong> out_buflen,
 );
 
+/// Experimental API.
+///
+/// Determine if |document| represents a tagged PDF.
+///
+/// For the definition of tagged PDF, See (see 10.7 "Tagged PDF" in PDF
+/// Reference 1.7).
+///
+/// document - handle to a document.
+///
+/// Returns |true| iff |document| is a tagged PDF.
+@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT)>()
+external int FPDFCatalog_IsTagged(FPDF_DOCUMENT document);
+
+/// Experimental API.
+/// Gets the language of |document| from the catalog's /Lang entry.
+///
+/// document - handle to a document.
+/// buffer   - a buffer for the language string. May be NULL.
+/// buflen   - the length of the buffer, in bytes. May be 0.
+///
+/// Returns the number of bytes in the language string, including the
+/// trailing NUL character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+///
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+///
+/// If |document| has no /Lang entry, an empty string is written to |buffer| and
+/// 2 is returned. On error, nothing is written to |buffer| and 0 is returned.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_DOCUMENT,
+    ffi.Pointer<FPDF_WCHAR>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFCatalog_GetLanguage(
+  FPDF_DOCUMENT document,
+  ffi.Pointer<FPDF_WCHAR> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Sets the language of |document| to |language|.
+///
+/// document - handle to a document.
+/// language - the language to set to.
+///
+/// Returns TRUE on success.
+@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT, FPDF_WIDESTRING)>()
+external int FPDFCatalog_SetLanguage(
+  FPDF_DOCUMENT document,
+  FPDF_WIDESTRING language,
+);
+
+/// Function: FPDFText_LoadPage
+/// Prepare information about all characters in a page.
+/// Parameters:
+/// page    -   Handle to the page. Returned by FPDF_LoadPage function
+/// (in FPDFVIEW module).
+/// Return value:
+/// A handle to the text page information structure.
+/// NULL if something goes wrong.
+/// Comments:
+/// Application must call FPDFText_ClosePage to release the text page
+/// information.
+@ffi.Native<FPDF_TEXTPAGE Function(FPDF_PAGE)>()
+external FPDF_TEXTPAGE FPDFText_LoadPage(FPDF_PAGE page);
+
+/// Function: FPDFText_ClosePage
+/// Release all resources allocated for a text page information
+/// structure.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// Return Value:
+/// None.
+@ffi.Native<ffi.Void Function(FPDF_TEXTPAGE)>()
+external void FPDFText_ClosePage(FPDF_TEXTPAGE text_page);
+
+/// Function: FPDFText_CountChars
+/// Get number of characters in a page.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// Return value:
+/// Number of characters in the page. Return -1 for error.
+/// Generated characters, like additional space characters, new line
+/// characters, are also counted.
+/// Comments:
+/// Characters in a page form a "stream", inside the stream, each
+/// character has an index.
+/// We will use the index parameters in many of FPDFTEXT functions. The
+/// first character in the page
+/// has an index value of zero.
+@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE)>()
+external int FPDFText_CountChars(FPDF_TEXTPAGE text_page);
+
+/// Function: FPDFText_GetUnicode
+/// Get Unicode of a character in a page.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// The Unicode of the particular character.
+/// If a character is not encoded in Unicode and Foxit engine can't
+/// convert to Unicode,
+/// the return value will be zero.
+@ffi.Native<ffi.UnsignedInt Function(FPDF_TEXTPAGE, ffi.Int)>()
+external int FPDFText_GetUnicode(FPDF_TEXTPAGE text_page, int index);
+
+/// Experimental API.
+/// Function: FPDFText_GetTextObject
+/// Get the FPDF_PAGEOBJECT associated with a given character.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// The associated text object for the character at |index|, or NULL on
+/// error. The returned text object, if non-null, is of type
+/// |FPDF_PAGEOBJ_TEXT|. The caller does not own the returned object.
+@ffi.Native<FPDF_PAGEOBJECT Function(FPDF_TEXTPAGE, ffi.Int)>()
+external FPDF_PAGEOBJECT FPDFText_GetTextObject(
+  FPDF_TEXTPAGE text_page,
+  int index,
+);
+
+/// Experimental API.
+/// Function: FPDFText_IsGenerated
+/// Get if a character in a page is generated by PDFium.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// 1 if the character is generated by PDFium.
+/// 0 if the character is not generated by PDFium.
+/// -1 if there was an error.
+@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
+external int FPDFText_IsGenerated(FPDF_TEXTPAGE text_page, int index);
+
+/// Experimental API.
+/// Function: FPDFText_IsHyphen
+/// Get if a character in a page is a hyphen.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// 1 if the character is a hyphen.
+/// 0 if the character is not a hyphen.
+/// -1 if there was an error.
+@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
+external int FPDFText_IsHyphen(FPDF_TEXTPAGE text_page, int index);
+
+/// Experimental API.
+/// Function: FPDFText_HasUnicodeMapError
+/// Get if a character in a page has an invalid unicode mapping.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// 1 if the character has an invalid unicode mapping.
+/// 0 if the character has no known unicode mapping issues.
+/// -1 if there was an error.
+@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
+external int FPDFText_HasUnicodeMapError(FPDF_TEXTPAGE text_page, int index);
+
+/// Function: FPDFText_GetFontSize
+/// Get the font size of a particular character.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// The font size of the particular character, measured in points (about
+/// 1/72 inch). This is the typographic size of the font (so called
+/// "em size").
+@ffi.Native<ffi.Double Function(FPDF_TEXTPAGE, ffi.Int)>()
+external double FPDFText_GetFontSize(FPDF_TEXTPAGE text_page, int index);
+
+/// Experimental API.
+/// Function: FPDFText_GetFontInfo
+/// Get the font name and flags of a particular character.
+/// Parameters:
+/// text_page - Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index     - Zero-based index of the character.
+/// buffer    - A buffer receiving the font name.
+/// buflen    - The length of |buffer| in bytes.
+/// flags     - Optional pointer to an int receiving the font flags.
+/// These flags should be interpreted per PDF spec 1.7
+/// Section 5.7.1 Font Descriptor Flags.
+/// Return value:
+/// On success, return the length of the font name, including the
+/// trailing NUL character, in bytes. If this length is less than or
+/// equal to |length|, |buffer| is set to the font name, |flags| is
+/// set to the font flags. |buffer| is in UTF-8 encoding. Return 0 on
+/// failure.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+    ffi.Pointer<ffi.Int>,
+  )
+>()
+external int FPDFText_GetFontInfo(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+  ffi.Pointer<ffi.Int> flags,
+);
+
+/// Experimental API.
+/// Function: FPDFText_GetFontWeight
+/// Get the font weight of a particular character.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return value:
+/// On success, return the font weight of the particular character. If
+/// |text_page| is invalid, if |index| is out of bounds, or if the
+/// character's text object is undefined, return -1.
+@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
+external int FPDFText_GetFontWeight(FPDF_TEXTPAGE text_page, int index);
+
+/// Experimental API.
+/// Function: FPDFText_GetFillColor
+/// Get the fill color of a particular character.
+/// Parameters:
+/// text_page      -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index          -   Zero-based index of the character.
+/// R              -   Pointer to an unsigned int number receiving the
+/// red value of the fill color.
+/// G              -   Pointer to an unsigned int number receiving the
+/// green value of the fill color.
+/// B              -   Pointer to an unsigned int number receiving the
+/// blue value of the fill color.
+/// A              -   Pointer to an unsigned int number receiving the
+/// alpha value of the fill color.
+/// Return value:
+/// Whether the call succeeded. If false, |R|, |G|, |B| and |A| are
+/// unchanged.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Pointer<ffi.UnsignedInt>,
+    ffi.Pointer<ffi.UnsignedInt>,
+    ffi.Pointer<ffi.UnsignedInt>,
+    ffi.Pointer<ffi.UnsignedInt>,
+  )
+>()
+external int FPDFText_GetFillColor(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<ffi.UnsignedInt> R,
+  ffi.Pointer<ffi.UnsignedInt> G,
+  ffi.Pointer<ffi.UnsignedInt> B,
+  ffi.Pointer<ffi.UnsignedInt> A,
+);
+
+/// Experimental API.
+/// Function: FPDFText_GetStrokeColor
+/// Get the stroke color of a particular character.
+/// Parameters:
+/// text_page      -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index          -   Zero-based index of the character.
+/// R              -   Pointer to an unsigned int number receiving the
+/// red value of the stroke color.
+/// G              -   Pointer to an unsigned int number receiving the
+/// green value of the stroke color.
+/// B              -   Pointer to an unsigned int number receiving the
+/// blue value of the stroke color.
+/// A              -   Pointer to an unsigned int number receiving the
+/// alpha value of the stroke color.
+/// Return value:
+/// Whether the call succeeded. If false, |R|, |G|, |B| and |A| are
+/// unchanged.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Pointer<ffi.UnsignedInt>,
+    ffi.Pointer<ffi.UnsignedInt>,
+    ffi.Pointer<ffi.UnsignedInt>,
+    ffi.Pointer<ffi.UnsignedInt>,
+  )
+>()
+external int FPDFText_GetStrokeColor(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<ffi.UnsignedInt> R,
+  ffi.Pointer<ffi.UnsignedInt> G,
+  ffi.Pointer<ffi.UnsignedInt> B,
+  ffi.Pointer<ffi.UnsignedInt> A,
+);
+
+/// Experimental API.
+/// Function: FPDFText_GetCharAngle
+/// Get character rotation angle.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// Return Value:
+/// On success, return the angle value in radian. Value will always be
+/// greater or equal to 0. If |text_page| is invalid, or if |index| is
+/// out of bounds, then return -1.
+@ffi.Native<ffi.Float Function(FPDF_TEXTPAGE, ffi.Int)>()
+external double FPDFText_GetCharAngle(FPDF_TEXTPAGE text_page, int index);
+
+/// Function: FPDFText_GetCharBox
+/// Get bounding box of a particular character.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// left        -   Pointer to a double number receiving left position
+/// of the character box.
+/// right       -   Pointer to a double number receiving right position
+/// of the character box.
+/// bottom      -   Pointer to a double number receiving bottom position
+/// of the character box.
+/// top         -   Pointer to a double number receiving top position of
+/// the character box.
+/// Return Value:
+/// On success, return TRUE and fill in |left|, |right|, |bottom|, and
+/// |top|. If |text_page| is invalid, or if |index| is out of bounds,
+/// then return FALSE, and the out parameters remain unmodified.
+/// Comments:
+/// All positions are measured in PDF "user space".
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+  )
+>()
+external int FPDFText_GetCharBox(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<ffi.Double> left,
+  ffi.Pointer<ffi.Double> right,
+  ffi.Pointer<ffi.Double> bottom,
+  ffi.Pointer<ffi.Double> top,
+);
+
+/// Experimental API.
+/// Function: FPDFText_GetLooseCharBox
+/// Get a "loose" bounding box of a particular character, i.e., covering
+/// the entire glyph bounds, without taking the actual glyph shape into
+/// account.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// rect        -   Pointer to a FS_RECTF receiving the character box.
+/// Return Value:
+/// On success, return TRUE and fill in |rect|. If |text_page| is
+/// invalid, or if |index| is out of bounds, then return FALSE, and the
+/// |rect| out parameter remains unmodified.
+/// Comments:
+/// All positions are measured in PDF "user space".
+@ffi.Native<FPDF_BOOL Function(FPDF_TEXTPAGE, ffi.Int, ffi.Pointer<FS_RECTF>)>()
+external int FPDFText_GetLooseCharBox(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<FS_RECTF> rect,
+);
+
+/// Experimental API.
+/// Function: FPDFText_GetMatrix
+/// Get the effective transformation matrix for a particular character.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage().
+/// index       -   Zero-based index of the character.
+/// matrix      -   Pointer to a FS_MATRIX receiving the transformation
+/// matrix.
+/// Return Value:
+/// On success, return TRUE and fill in |matrix|. If |text_page| is
+/// invalid, or if |index| is out of bounds, or if |matrix| is NULL,
+/// then return FALSE, and |matrix| remains unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_TEXTPAGE, ffi.Int, ffi.Pointer<FS_MATRIX>)
+>()
+external int FPDFText_GetMatrix(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<FS_MATRIX> matrix,
+);
+
+/// Function: FPDFText_GetCharOrigin
+/// Get origin of a particular character.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// index       -   Zero-based index of the character.
+/// x           -   Pointer to a double number receiving x coordinate of
+/// the character origin.
+/// y           -   Pointer to a double number receiving y coordinate of
+/// the character origin.
+/// Return Value:
+/// Whether the call succeeded. If false, x and y are unchanged.
+/// Comments:
+/// All positions are measured in PDF "user space".
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+  )
+>()
+external int FPDFText_GetCharOrigin(
+  FPDF_TEXTPAGE text_page,
+  int index,
+  ffi.Pointer<ffi.Double> x,
+  ffi.Pointer<ffi.Double> y,
+);
+
+/// Function: FPDFText_GetCharIndexAtPos
+/// Get the index of a character at or nearby a certain position on the
+/// page.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// x           -   X position in PDF "user space".
+/// y           -   Y position in PDF "user space".
+/// xTolerance  -   An x-axis tolerance value for character hit
+/// detection, in point units.
+/// yTolerance  -   A y-axis tolerance value for character hit
+/// detection, in point units.
+/// Return Value:
+/// The zero-based index of the character at, or nearby the point (x,y).
+/// If there is no character at or nearby the point, return value will
+/// be -1. If an error occurs, -3 will be returned.
+@ffi.Native<
+  ffi.Int Function(
+    FPDF_TEXTPAGE,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+  )
+>()
+external int FPDFText_GetCharIndexAtPos(
+  FPDF_TEXTPAGE text_page,
+  double x,
+  double y,
+  double xTolerance,
+  double yTolerance,
+);
+
+/// Function: FPDFText_GetText
+/// Extract unicode text string from the page.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// start_index -   Index for the start characters.
+/// count       -   Number of UCS-2 values to be extracted.
+/// result      -   A buffer (allocated by application) receiving the
+/// extracted UCS-2 values. The buffer must be able to
+/// hold `count` UCS-2 values plus a terminator.
+/// Return Value:
+/// Number of characters written into the result buffer, including the
+/// trailing terminator.
+/// Comments:
+/// This function ignores characters without UCS-2 representations.
+/// It considers all characters on the page, even those that are not
+/// visible when the page has a cropbox. To filter out the characters
+/// outside of the cropbox, use FPDF_GetPageBoundingBox() and
+/// FPDFText_GetCharBox().
+@ffi.Native<
+  ffi.Int Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.UnsignedShort>,
+  )
+>()
+external int FPDFText_GetText(
+  FPDF_TEXTPAGE text_page,
+  int start_index,
+  int count,
+  ffi.Pointer<ffi.UnsignedShort> result,
+);
+
+/// Function: FPDFText_CountRects
+/// Counts number of rectangular areas occupied by a segment of text,
+/// and caches the result for subsequent FPDFText_GetRect() calls.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// start_index -   Index for the start character.
+/// count       -   Number of characters, or -1 for all remaining.
+/// Return value:
+/// Number of rectangles, 0 if text_page is null, or -1 on bad
+/// start_index.
+/// Comments:
+/// This function, along with FPDFText_GetRect can be used by
+/// applications to detect the position on the page for a text segment,
+/// so proper areas can be highlighted. The FPDFText_* functions will
+/// automatically merge small character boxes into bigger one if those
+/// characters are on the same line and use same font settings.
+@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int, ffi.Int)>()
+external int FPDFText_CountRects(
+  FPDF_TEXTPAGE text_page,
+  int start_index,
+  int count,
+);
+
+/// Function: FPDFText_GetRect
+/// Get a rectangular area from the result generated by
+/// FPDFText_CountRects.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// rect_index  -   Zero-based index for the rectangle.
+/// left        -   Pointer to a double value receiving the rectangle
+/// left boundary.
+/// top         -   Pointer to a double value receiving the rectangle
+/// top boundary.
+/// right       -   Pointer to a double value receiving the rectangle
+/// right boundary.
+/// bottom      -   Pointer to a double value receiving the rectangle
+/// bottom boundary.
+/// Return Value:
+/// On success, return TRUE and fill in |left|, |top|, |right|, and
+/// |bottom|. If |text_page| is invalid then return FALSE, and the out
+/// parameters remain unmodified. If |text_page| is valid but
+/// |rect_index| is out of bounds, then return FALSE and set the out
+/// parameters to 0.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_TEXTPAGE,
+    ffi.Int,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+  )
+>()
+external int FPDFText_GetRect(
+  FPDF_TEXTPAGE text_page,
+  int rect_index,
+  ffi.Pointer<ffi.Double> left,
+  ffi.Pointer<ffi.Double> top,
+  ffi.Pointer<ffi.Double> right,
+  ffi.Pointer<ffi.Double> bottom,
+);
+
+/// Function: FPDFText_GetBoundedText
+/// Extract unicode text within a rectangular boundary on the page.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// left        -   Left boundary.
+/// top         -   Top boundary.
+/// right       -   Right boundary.
+/// bottom      -   Bottom boundary.
+/// buffer      -   Caller-allocated buffer to receive UTF-16 values.
+/// buflen      -   Number of UTF-16 values (not bytes) that `buffer`
+/// is capable of holding.
+/// Return Value:
+/// If buffer is NULL or buflen is zero, return number of UTF-16
+/// values (not bytes) of text present within the rectangle, excluding
+/// a terminating NUL. Generally you should pass a buffer at least one
+/// larger than this if you want a terminating NUL, which will be
+/// provided if space is available. Otherwise, return number of UTF-16
+/// values copied into the buffer, including the terminating NUL when
+/// space for it is available.
+/// Comment:
+/// If the buffer is too small, as much text as will fit is copied into
+/// it. May return a split surrogate in that case.
+@ffi.Native<
+  ffi.Int Function(
+    FPDF_TEXTPAGE,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+    ffi.Pointer<ffi.UnsignedShort>,
+    ffi.Int,
+  )
+>()
+external int FPDFText_GetBoundedText(
+  FPDF_TEXTPAGE text_page,
+  double left,
+  double top,
+  double right,
+  double bottom,
+  ffi.Pointer<ffi.UnsignedShort> buffer,
+  int buflen,
+);
+
+/// Function: FPDFText_FindStart
+/// Start a search.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// findwhat    -   A unicode match pattern.
+/// flags       -   Option flags.
+/// start_index -   Start from this character. -1 for end of the page.
+/// Return Value:
+/// A handle for the search context. FPDFText_FindClose must be called
+/// to release this handle.
+@ffi.Native<
+  FPDF_SCHHANDLE Function(
+    FPDF_TEXTPAGE,
+    FPDF_WIDESTRING,
+    ffi.UnsignedLong,
+    ffi.Int,
+  )
+>()
+external FPDF_SCHHANDLE FPDFText_FindStart(
+  FPDF_TEXTPAGE text_page,
+  FPDF_WIDESTRING findwhat,
+  int flags,
+  int start_index,
+);
+
+/// Function: FPDFText_FindNext
+/// Search in the direction from page start to end.
+/// Parameters:
+/// handle      -   A search context handle returned by
+/// FPDFText_FindStart.
+/// Return Value:
+/// Whether a match is found.
+@ffi.Native<FPDF_BOOL Function(FPDF_SCHHANDLE)>()
+external int FPDFText_FindNext(FPDF_SCHHANDLE handle);
+
+/// Function: FPDFText_FindPrev
+/// Search in the direction from page end to start.
+/// Parameters:
+/// handle      -   A search context handle returned by
+/// FPDFText_FindStart.
+/// Return Value:
+/// Whether a match is found.
+@ffi.Native<FPDF_BOOL Function(FPDF_SCHHANDLE)>()
+external int FPDFText_FindPrev(FPDF_SCHHANDLE handle);
+
+/// Function: FPDFText_GetSchResultIndex
+/// Get the starting character index of the search result.
+/// Parameters:
+/// handle      -   A search context handle returned by
+/// FPDFText_FindStart.
+/// Return Value:
+/// Index for the starting character.
+@ffi.Native<ffi.Int Function(FPDF_SCHHANDLE)>()
+external int FPDFText_GetSchResultIndex(FPDF_SCHHANDLE handle);
+
+/// Function: FPDFText_GetSchCount
+/// Get the number of matched characters in the search result.
+/// Parameters:
+/// handle      -   A search context handle returned by
+/// FPDFText_FindStart.
+/// Return Value:
+/// Number of matched characters.
+@ffi.Native<ffi.Int Function(FPDF_SCHHANDLE)>()
+external int FPDFText_GetSchCount(FPDF_SCHHANDLE handle);
+
+/// Function: FPDFText_FindClose
+/// Release a search context.
+/// Parameters:
+/// handle      -   A search context handle returned by
+/// FPDFText_FindStart.
+/// Return Value:
+/// None.
+@ffi.Native<ffi.Void Function(FPDF_SCHHANDLE)>()
+external void FPDFText_FindClose(FPDF_SCHHANDLE handle);
+
+/// Function: FPDFLink_LoadWebLinks
+/// Prepare information about weblinks in a page.
+/// Parameters:
+/// text_page   -   Handle to a text page information structure.
+/// Returned by FPDFText_LoadPage function.
+/// Return Value:
+/// A handle to the page's links information structure, or
+/// NULL if something goes wrong.
+/// Comments:
+/// Weblinks are those links implicitly embedded in PDF pages. PDF also
+/// has a type of annotation called "link" (FPDFTEXT doesn't deal with
+/// that kind of link). FPDFTEXT weblink feature is useful for
+/// automatically detecting links in the page contents. For example,
+/// things like "https://www.example.com" will be detected, so
+/// applications can allow user to click on those characters to activate
+/// the link, even the PDF doesn't come with link annotations.
+///
+/// FPDFLink_CloseWebLinks must be called to release resources.
+@ffi.Native<FPDF_PAGELINK Function(FPDF_TEXTPAGE)>()
+external FPDF_PAGELINK FPDFLink_LoadWebLinks(FPDF_TEXTPAGE text_page);
+
+/// Function: FPDFLink_CountWebLinks
+/// Count number of detected web links.
+/// Parameters:
+/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
+/// Return Value:
+/// Number of detected web links.
+@ffi.Native<ffi.Int Function(FPDF_PAGELINK)>()
+external int FPDFLink_CountWebLinks(FPDF_PAGELINK link_page);
+
+/// Function: FPDFLink_GetURL
+/// Fetch the URL information for a detected web link.
+/// Parameters:
+/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
+/// link_index  -   Zero-based index for the link.
+/// buffer      -   A unicode buffer for the result.
+/// buflen      -   Number of 16-bit code units (not bytes) for the
+/// buffer, including an additional terminator.
+/// Return Value:
+/// If |buffer| is NULL or |buflen| is zero, return the number of 16-bit
+/// code units (not bytes) needed to buffer the result (an additional
+/// terminator is included in this count).
+/// Otherwise, copy the result into |buffer|, truncating at |buflen| if
+/// the result is too large to fit, and return the number of 16-bit code
+/// units actually copied into the buffer (the additional terminator is
+/// also included in this count).
+/// If |link_index| does not correspond to a valid link, then the result
+/// is an empty string.
+@ffi.Native<
+  ffi.Int Function(
+    FPDF_PAGELINK,
+    ffi.Int,
+    ffi.Pointer<ffi.UnsignedShort>,
+    ffi.Int,
+  )
+>()
+external int FPDFLink_GetURL(
+  FPDF_PAGELINK link_page,
+  int link_index,
+  ffi.Pointer<ffi.UnsignedShort> buffer,
+  int buflen,
+);
+
+/// Function: FPDFLink_CountRects
+/// Count number of rectangular areas for the link.
+/// Parameters:
+/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
+/// link_index  -   Zero-based index for the link.
+/// Return Value:
+/// Number of rectangular areas for the link.  If |link_index| does
+/// not correspond to a valid link, then 0 is returned.
+@ffi.Native<ffi.Int Function(FPDF_PAGELINK, ffi.Int)>()
+external int FPDFLink_CountRects(FPDF_PAGELINK link_page, int link_index);
+
+/// Function: FPDFLink_GetRect
+/// Fetch the boundaries of a rectangle for a link.
+/// Parameters:
+/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
+/// link_index  -   Zero-based index for the link.
+/// rect_index  -   Zero-based index for a rectangle.
+/// left        -   Pointer to a double value receiving the rectangle
+/// left boundary.
+/// top         -   Pointer to a double value receiving the rectangle
+/// top boundary.
+/// right       -   Pointer to a double value receiving the rectangle
+/// right boundary.
+/// bottom      -   Pointer to a double value receiving the rectangle
+/// bottom boundary.
+/// Return Value:
+/// On success, return TRUE and fill in |left|, |top|, |right|, and
+/// |bottom|. If |link_page| is invalid or if |link_index| does not
+/// correspond to a valid link, then return FALSE, and the out
+/// parameters remain unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGELINK,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+  )
+>()
+external int FPDFLink_GetRect(
+  FPDF_PAGELINK link_page,
+  int link_index,
+  int rect_index,
+  ffi.Pointer<ffi.Double> left,
+  ffi.Pointer<ffi.Double> top,
+  ffi.Pointer<ffi.Double> right,
+  ffi.Pointer<ffi.Double> bottom,
+);
+
+/// Experimental API.
+/// Function: FPDFLink_GetTextRange
+/// Fetch the start char index and char count for a link.
+/// Parameters:
+/// link_page         -   Handle returned by FPDFLink_LoadWebLinks.
+/// link_index        -   Zero-based index for the link.
+/// start_char_index  -   pointer to int receiving the start char index
+/// char_count        -   pointer to int receiving the char count
+/// Return Value:
+/// On success, return TRUE and fill in |start_char_index| and
+/// |char_count|. if |link_page| is invalid or if |link_index| does
+/// not correspond to a valid link, then return FALSE and the out
+/// parameters remain unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGELINK,
+    ffi.Int,
+    ffi.Pointer<ffi.Int>,
+    ffi.Pointer<ffi.Int>,
+  )
+>()
+external int FPDFLink_GetTextRange(
+  FPDF_PAGELINK link_page,
+  int link_index,
+  ffi.Pointer<ffi.Int> start_char_index,
+  ffi.Pointer<ffi.Int> char_count,
+);
+
+/// Function: FPDFLink_CloseWebLinks
+/// Release resources used by weblink feature.
+/// Parameters:
+/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
+/// Return Value:
+/// None.
+@ffi.Native<ffi.Void Function(FPDF_PAGELINK)>()
+external void FPDFLink_CloseWebLinks(FPDF_PAGELINK link_page);
+
+/// Set "MediaBox" entry to the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - The left of the rectangle.
+/// bottom - The bottom of the rectangle.
+/// right  - The right of the rectangle.
+/// top    - The top of the rectangle.
+@ffi.Native<
+  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+>()
+external void FPDFPage_SetMediaBox(
+  FPDF_PAGE page,
+  double left,
+  double bottom,
+  double right,
+  double top,
+);
+
+/// Set "CropBox" entry to the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - The left of the rectangle.
+/// bottom - The bottom of the rectangle.
+/// right  - The right of the rectangle.
+/// top    - The top of the rectangle.
+@ffi.Native<
+  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+>()
+external void FPDFPage_SetCropBox(
+  FPDF_PAGE page,
+  double left,
+  double bottom,
+  double right,
+  double top,
+);
+
+/// Set "BleedBox" entry to the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - The left of the rectangle.
+/// bottom - The bottom of the rectangle.
+/// right  - The right of the rectangle.
+/// top    - The top of the rectangle.
+@ffi.Native<
+  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+>()
+external void FPDFPage_SetBleedBox(
+  FPDF_PAGE page,
+  double left,
+  double bottom,
+  double right,
+  double top,
+);
+
+/// Set "TrimBox" entry to the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - The left of the rectangle.
+/// bottom - The bottom of the rectangle.
+/// right  - The right of the rectangle.
+/// top    - The top of the rectangle.
+@ffi.Native<
+  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+>()
+external void FPDFPage_SetTrimBox(
+  FPDF_PAGE page,
+  double left,
+  double bottom,
+  double right,
+  double top,
+);
+
+/// Set "ArtBox" entry to the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - The left of the rectangle.
+/// bottom - The bottom of the rectangle.
+/// right  - The right of the rectangle.
+/// top    - The top of the rectangle.
+@ffi.Native<
+  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+>()
+external void FPDFPage_SetArtBox(
+  FPDF_PAGE page,
+  double left,
+  double bottom,
+  double right,
+  double top,
+);
+
+/// Get "MediaBox" entry from the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - Pointer to a float value receiving the left of the rectangle.
+/// bottom - Pointer to a float value receiving the bottom of the rectangle.
+/// right  - Pointer to a float value receiving the right of the rectangle.
+/// top    - Pointer to a float value receiving the top of the rectangle.
+///
+/// On success, return true and write to the out parameters. Otherwise return
+/// false and leave the out parameters unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGE,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+  )
+>()
+external int FPDFPage_GetMediaBox(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Float> left,
+  ffi.Pointer<ffi.Float> bottom,
+  ffi.Pointer<ffi.Float> right,
+  ffi.Pointer<ffi.Float> top,
+);
+
+/// Get "CropBox" entry from the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - Pointer to a float value receiving the left of the rectangle.
+/// bottom - Pointer to a float value receiving the bottom of the rectangle.
+/// right  - Pointer to a float value receiving the right of the rectangle.
+/// top    - Pointer to a float value receiving the top of the rectangle.
+///
+/// On success, return true and write to the out parameters. Otherwise return
+/// false and leave the out parameters unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGE,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+  )
+>()
+external int FPDFPage_GetCropBox(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Float> left,
+  ffi.Pointer<ffi.Float> bottom,
+  ffi.Pointer<ffi.Float> right,
+  ffi.Pointer<ffi.Float> top,
+);
+
+/// Get "BleedBox" entry from the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - Pointer to a float value receiving the left of the rectangle.
+/// bottom - Pointer to a float value receiving the bottom of the rectangle.
+/// right  - Pointer to a float value receiving the right of the rectangle.
+/// top    - Pointer to a float value receiving the top of the rectangle.
+///
+/// On success, return true and write to the out parameters. Otherwise return
+/// false and leave the out parameters unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGE,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+  )
+>()
+external int FPDFPage_GetBleedBox(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Float> left,
+  ffi.Pointer<ffi.Float> bottom,
+  ffi.Pointer<ffi.Float> right,
+  ffi.Pointer<ffi.Float> top,
+);
+
+/// Get "TrimBox" entry from the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - Pointer to a float value receiving the left of the rectangle.
+/// bottom - Pointer to a float value receiving the bottom of the rectangle.
+/// right  - Pointer to a float value receiving the right of the rectangle.
+/// top    - Pointer to a float value receiving the top of the rectangle.
+///
+/// On success, return true and write to the out parameters. Otherwise return
+/// false and leave the out parameters unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGE,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+  )
+>()
+external int FPDFPage_GetTrimBox(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Float> left,
+  ffi.Pointer<ffi.Float> bottom,
+  ffi.Pointer<ffi.Float> right,
+  ffi.Pointer<ffi.Float> top,
+);
+
+/// Get "ArtBox" entry from the page dictionary.
+///
+/// page   - Handle to a page.
+/// left   - Pointer to a float value receiving the left of the rectangle.
+/// bottom - Pointer to a float value receiving the bottom of the rectangle.
+/// right  - Pointer to a float value receiving the right of the rectangle.
+/// top    - Pointer to a float value receiving the top of the rectangle.
+///
+/// On success, return true and write to the out parameters. Otherwise return
+/// false and leave the out parameters unmodified.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_PAGE,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Pointer<ffi.Float>,
+  )
+>()
+external int FPDFPage_GetArtBox(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Float> left,
+  ffi.Pointer<ffi.Float> bottom,
+  ffi.Pointer<ffi.Float> right,
+  ffi.Pointer<ffi.Float> top,
+);
+
+/// Apply transforms to |page|.
+///
+/// If |matrix| is provided it will be applied to transform the page.
+/// If |clipRect| is provided it will be used to clip the resulting page.
+/// If neither |matrix| or |clipRect| are provided this method returns |false|.
+/// Returns |true| if transforms are applied.
+///
+/// This function will transform the whole page, and would take effect to all the
+/// objects in the page.
+///
+/// page        - Page handle.
+/// matrix      - Transform matrix.
+/// clipRect    - Clipping rectangle.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_PAGE, ffi.Pointer<FS_MATRIX>, ffi.Pointer<FS_RECTF>)
+>()
+external int FPDFPage_TransFormWithClip(
+  FPDF_PAGE page,
+  ffi.Pointer<FS_MATRIX> matrix,
+  ffi.Pointer<FS_RECTF> clipRect,
+);
+
+/// Transform (scale, rotate, shear, move) the clip path of page object.
+/// page_object - Handle to a page object. Returned by
+/// FPDFPageObj_NewImageObj().
+///
+/// a  - The coefficient "a" of the matrix.
+/// b  - The coefficient "b" of the matrix.
+/// c  - The coefficient "c" of the matrix.
+/// d  - The coefficient "d" of the matrix.
+/// e  - The coefficient "e" of the matrix.
+/// f  - The coefficient "f" of the matrix.
+@ffi.Native<
+  ffi.Void Function(
+    FPDF_PAGEOBJECT,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+    ffi.Double,
+  )
+>()
+external void FPDFPageObj_TransformClipPath(
+  FPDF_PAGEOBJECT page_object,
+  double a,
+  double b,
+  double c,
+  double d,
+  double e,
+  double f,
+);
+
+/// Experimental API.
+/// Get the clip path of the page object.
+///
+/// page object - Handle to a page object. Returned by e.g.
+/// FPDFPage_GetObject().
+///
+/// Returns the handle to the clip path, or NULL on failure. The caller does not
+/// take ownership of the returned FPDF_CLIPPATH. Instead, it remains valid until
+/// FPDF_ClosePage() is called for the page containing |page_object|.
+@ffi.Native<FPDF_CLIPPATH Function(FPDF_PAGEOBJECT)>()
+external FPDF_CLIPPATH FPDFPageObj_GetClipPath(FPDF_PAGEOBJECT page_object);
+
+/// Experimental API.
+/// Get number of paths inside |clip_path|.
+///
+/// clip_path - handle to a clip_path.
+///
+/// Returns the number of objects in |clip_path| or -1 on failure.
+@ffi.Native<ffi.Int Function(FPDF_CLIPPATH)>()
+external int FPDFClipPath_CountPaths(FPDF_CLIPPATH clip_path);
+
+/// Experimental API.
+/// Get number of segments inside one path of |clip_path|.
+///
+/// clip_path  - handle to a clip_path.
+/// path_index - index into the array of paths of the clip path.
+///
+/// Returns the number of segments or -1 on failure.
+@ffi.Native<ffi.Int Function(FPDF_CLIPPATH, ffi.Int)>()
+external int FPDFClipPath_CountPathSegments(
+  FPDF_CLIPPATH clip_path,
+  int path_index,
+);
+
+/// Experimental API.
+/// Get segment in one specific path of |clip_path| at index.
+///
+/// clip_path     - handle to a clip_path.
+/// path_index    - the index of a path.
+/// segment_index - the index of a segment.
+///
+/// Returns the handle to the segment, or NULL on failure. The caller does not
+/// take ownership of the returned FPDF_PATHSEGMENT. Instead, it remains valid
+/// until FPDF_ClosePage() is called for the page containing |clip_path|.
+@ffi.Native<FPDF_PATHSEGMENT Function(FPDF_CLIPPATH, ffi.Int, ffi.Int)>()
+external FPDF_PATHSEGMENT FPDFClipPath_GetPathSegment(
+  FPDF_CLIPPATH clip_path,
+  int path_index,
+  int segment_index,
+);
+
+/// Create a new clip path, with a rectangle inserted.
+///
+/// Caller takes ownership of the returned FPDF_CLIPPATH. It should be freed with
+/// FPDF_DestroyClipPath().
+///
+/// left   - The left of the clip box.
+/// bottom - The bottom of the clip box.
+/// right  - The right of the clip box.
+/// top    - The top of the clip box.
+@ffi.Native<
+  FPDF_CLIPPATH Function(ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+>()
+external FPDF_CLIPPATH FPDF_CreateClipPath(
+  double left,
+  double bottom,
+  double right,
+  double top,
+);
+
+/// Destroy the clip path.
+///
+/// clipPath - A handle to the clip path. It will be invalid after this call.
+@ffi.Native<ffi.Void Function(FPDF_CLIPPATH)>()
+external void FPDF_DestroyClipPath(FPDF_CLIPPATH clipPath);
+
+/// Clip the page content, the page content that outside the clipping region
+/// become invisible.
+///
+/// A clip path will be inserted before the page content stream or content array.
+/// In this way, the page content will be clipped by this clip path.
+///
+/// page        - A page handle.
+/// clipPath    - A handle to the clip path. (Does not take ownership.)
+@ffi.Native<ffi.Void Function(FPDF_PAGE, FPDF_CLIPPATH)>()
+external void FPDFPage_InsertClipPath(FPDF_PAGE page, FPDF_CLIPPATH clipPath);
+
 /// Get the first child of |bookmark|, or the first top-level bookmark item.
 ///
 /// document - handle to the document.
@@ -1805,509 +3002,184 @@ external int FPDF_GetPageLabel(
 );
 
 /// Experimental API.
-/// Function: FPDF_RenderPageBitmapWithColorScheme_Start
-/// Start to render page contents to a device independent bitmap
-/// progressively with a specified color scheme for the content.
+/// Function: FPDF_GetSignatureCount
+/// Get total number of signatures in the document.
 /// Parameters:
-/// bitmap       -   Handle to the device independent bitmap (as the
-/// output buffer). Bitmap handle can be created by
-/// FPDFBitmap_Create function.
-/// page         -   Handle to the page as returned by FPDF_LoadPage
-/// function.
-/// start_x      -   Left pixel position of the display area in the
-/// bitmap coordinate.
-/// start_y      -   Top pixel position of the display area in the
-/// bitmap coordinate.
-/// size_x       -   Horizontal size (in pixels) for displaying the
-/// page.
-/// size_y       -   Vertical size (in pixels) for displaying the page.
-/// rotate       -   Page orientation: 0 (normal), 1 (rotated 90
-/// degrees clockwise), 2 (rotated 180 degrees),
-/// 3 (rotated 90 degrees counter-clockwise).
-/// flags        -   0 for normal display, or combination of flags
-/// defined in fpdfview.h. With FPDF_ANNOT flag, it
-/// renders all annotations that does not require
-/// user-interaction, which are all annotations except
-/// widget and popup annotations.
-/// color_scheme -   Color scheme to be used in rendering the |page|.
-/// If null, this function will work similar to
-/// FPDF_RenderPageBitmap_Start().
-/// pause        -   The IFSDK_PAUSE interface. A callback mechanism
-/// allowing the page rendering process.
+/// document    -   Handle to document. Returned by FPDF_LoadDocument().
 /// Return value:
-/// Rendering Status. See flags for progressive process status for the
-/// details.
-@ffi.Native<
-  ffi.Int Function(
-    FPDF_BITMAP,
-    FPDF_PAGE,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Pointer<FPDF_COLORSCHEME>,
-    ffi.Pointer<IFSDK_PAUSE>,
-  )
->()
-external int FPDF_RenderPageBitmapWithColorScheme_Start(
-  FPDF_BITMAP bitmap,
-  FPDF_PAGE page,
-  int start_x,
-  int start_y,
-  int size_x,
-  int size_y,
-  int rotate,
-  int flags,
-  ffi.Pointer<FPDF_COLORSCHEME> color_scheme,
-  ffi.Pointer<IFSDK_PAUSE> pause,
-);
+/// Total number of signatures in the document on success, -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
+external int FPDF_GetSignatureCount(FPDF_DOCUMENT document);
 
-/// Function: FPDF_RenderPageBitmap_Start
-/// Start to render page contents to a device independent bitmap
-/// progressively.
+/// Experimental API.
+/// Function: FPDF_GetSignatureObject
+/// Get the Nth signature of the document.
 /// Parameters:
-/// bitmap      -   Handle to the device independent bitmap (as the
-/// output buffer). Bitmap handle can be created by
-/// FPDFBitmap_Create().
-/// page        -   Handle to the page, as returned by FPDF_LoadPage().
-/// start_x     -   Left pixel position of the display area in the
-/// bitmap coordinates.
-/// start_y     -   Top pixel position of the display area in the bitmap
-/// coordinates.
-/// size_x      -   Horizontal size (in pixels) for displaying the page.
-/// size_y      -   Vertical size (in pixels) for displaying the page.
-/// rotate      -   Page orientation: 0 (normal), 1 (rotated 90 degrees
-/// clockwise), 2 (rotated 180 degrees), 3 (rotated 90
-/// degrees counter-clockwise).
-/// flags       -   0 for normal display, or combination of flags
-/// defined in fpdfview.h. With FPDF_ANNOT flag, it
-/// renders all annotations that does not require
-/// user-interaction, which are all annotations except
-/// widget and popup annotations.
-/// pause       -   The IFSDK_PAUSE interface.A callback mechanism
-/// allowing the page rendering process
+/// document    -   Handle to document. Returned by FPDF_LoadDocument().
+/// index       -   Index into the array of signatures of the document.
 /// Return value:
-/// Rendering Status. See flags for progressive process status for the
-/// details.
-@ffi.Native<
-  ffi.Int Function(
-    FPDF_BITMAP,
-    FPDF_PAGE,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    ffi.Pointer<IFSDK_PAUSE>,
-  )
->()
-external int FPDF_RenderPageBitmap_Start(
-  FPDF_BITMAP bitmap,
-  FPDF_PAGE page,
-  int start_x,
-  int start_y,
-  int size_x,
-  int size_y,
-  int rotate,
-  int flags,
-  ffi.Pointer<IFSDK_PAUSE> pause,
-);
-
-/// Function: FPDF_RenderPage_Continue
-/// Continue rendering a PDF page.
-/// Parameters:
-/// page        -   Handle to the page, as returned by FPDF_LoadPage().
-/// pause       -   The IFSDK_PAUSE interface (a callback mechanism
-/// allowing the page rendering process to be paused
-/// before it's finished). This can be NULL if you
-/// don't want to pause.
-/// Return value:
-/// The rendering status. See flags for progressive process status for
-/// the details.
-@ffi.Native<ffi.Int Function(FPDF_PAGE, ffi.Pointer<IFSDK_PAUSE>)>()
-external int FPDF_RenderPage_Continue(
-  FPDF_PAGE page,
-  ffi.Pointer<IFSDK_PAUSE> pause,
-);
-
-/// Function: FPDF_RenderPage_Close
-/// Release the resource allocate during page rendering. Need to be
-/// called after finishing rendering or
-/// cancel the rendering.
-/// Parameters:
-/// page        -   Handle to the page, as returned by FPDF_LoadPage().
-/// Return value:
-/// None.
-@ffi.Native<ffi.Void Function(FPDF_PAGE)>()
-external void FPDF_RenderPage_Close(FPDF_PAGE page);
-
-/// Set "MediaBox" entry to the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - The left of the rectangle.
-/// bottom - The bottom of the rectangle.
-/// right  - The right of the rectangle.
-/// top    - The top of the rectangle.
-@ffi.Native<
-  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
->()
-external void FPDFPage_SetMediaBox(
-  FPDF_PAGE page,
-  double left,
-  double bottom,
-  double right,
-  double top,
-);
-
-/// Set "CropBox" entry to the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - The left of the rectangle.
-/// bottom - The bottom of the rectangle.
-/// right  - The right of the rectangle.
-/// top    - The top of the rectangle.
-@ffi.Native<
-  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
->()
-external void FPDFPage_SetCropBox(
-  FPDF_PAGE page,
-  double left,
-  double bottom,
-  double right,
-  double top,
-);
-
-/// Set "BleedBox" entry to the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - The left of the rectangle.
-/// bottom - The bottom of the rectangle.
-/// right  - The right of the rectangle.
-/// top    - The top of the rectangle.
-@ffi.Native<
-  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
->()
-external void FPDFPage_SetBleedBox(
-  FPDF_PAGE page,
-  double left,
-  double bottom,
-  double right,
-  double top,
-);
-
-/// Set "TrimBox" entry to the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - The left of the rectangle.
-/// bottom - The bottom of the rectangle.
-/// right  - The right of the rectangle.
-/// top    - The top of the rectangle.
-@ffi.Native<
-  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
->()
-external void FPDFPage_SetTrimBox(
-  FPDF_PAGE page,
-  double left,
-  double bottom,
-  double right,
-  double top,
-);
-
-/// Set "ArtBox" entry to the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - The left of the rectangle.
-/// bottom - The bottom of the rectangle.
-/// right  - The right of the rectangle.
-/// top    - The top of the rectangle.
-@ffi.Native<
-  ffi.Void Function(FPDF_PAGE, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
->()
-external void FPDFPage_SetArtBox(
-  FPDF_PAGE page,
-  double left,
-  double bottom,
-  double right,
-  double top,
-);
-
-/// Get "MediaBox" entry from the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - Pointer to a float value receiving the left of the rectangle.
-/// bottom - Pointer to a float value receiving the bottom of the rectangle.
-/// right  - Pointer to a float value receiving the right of the rectangle.
-/// top    - Pointer to a float value receiving the top of the rectangle.
-///
-/// On success, return true and write to the out parameters. Otherwise return
-/// false and leave the out parameters unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGE,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-  )
->()
-external int FPDFPage_GetMediaBox(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Float> left,
-  ffi.Pointer<ffi.Float> bottom,
-  ffi.Pointer<ffi.Float> right,
-  ffi.Pointer<ffi.Float> top,
-);
-
-/// Get "CropBox" entry from the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - Pointer to a float value receiving the left of the rectangle.
-/// bottom - Pointer to a float value receiving the bottom of the rectangle.
-/// right  - Pointer to a float value receiving the right of the rectangle.
-/// top    - Pointer to a float value receiving the top of the rectangle.
-///
-/// On success, return true and write to the out parameters. Otherwise return
-/// false and leave the out parameters unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGE,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-  )
->()
-external int FPDFPage_GetCropBox(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Float> left,
-  ffi.Pointer<ffi.Float> bottom,
-  ffi.Pointer<ffi.Float> right,
-  ffi.Pointer<ffi.Float> top,
-);
-
-/// Get "BleedBox" entry from the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - Pointer to a float value receiving the left of the rectangle.
-/// bottom - Pointer to a float value receiving the bottom of the rectangle.
-/// right  - Pointer to a float value receiving the right of the rectangle.
-/// top    - Pointer to a float value receiving the top of the rectangle.
-///
-/// On success, return true and write to the out parameters. Otherwise return
-/// false and leave the out parameters unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGE,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-  )
->()
-external int FPDFPage_GetBleedBox(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Float> left,
-  ffi.Pointer<ffi.Float> bottom,
-  ffi.Pointer<ffi.Float> right,
-  ffi.Pointer<ffi.Float> top,
-);
-
-/// Get "TrimBox" entry from the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - Pointer to a float value receiving the left of the rectangle.
-/// bottom - Pointer to a float value receiving the bottom of the rectangle.
-/// right  - Pointer to a float value receiving the right of the rectangle.
-/// top    - Pointer to a float value receiving the top of the rectangle.
-///
-/// On success, return true and write to the out parameters. Otherwise return
-/// false and leave the out parameters unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGE,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-  )
->()
-external int FPDFPage_GetTrimBox(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Float> left,
-  ffi.Pointer<ffi.Float> bottom,
-  ffi.Pointer<ffi.Float> right,
-  ffi.Pointer<ffi.Float> top,
-);
-
-/// Get "ArtBox" entry from the page dictionary.
-///
-/// page   - Handle to a page.
-/// left   - Pointer to a float value receiving the left of the rectangle.
-/// bottom - Pointer to a float value receiving the bottom of the rectangle.
-/// right  - Pointer to a float value receiving the right of the rectangle.
-/// top    - Pointer to a float value receiving the top of the rectangle.
-///
-/// On success, return true and write to the out parameters. Otherwise return
-/// false and leave the out parameters unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGE,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-    ffi.Pointer<ffi.Float>,
-  )
->()
-external int FPDFPage_GetArtBox(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Float> left,
-  ffi.Pointer<ffi.Float> bottom,
-  ffi.Pointer<ffi.Float> right,
-  ffi.Pointer<ffi.Float> top,
-);
-
-/// Apply transforms to |page|.
-///
-/// If |matrix| is provided it will be applied to transform the page.
-/// If |clipRect| is provided it will be used to clip the resulting page.
-/// If neither |matrix| or |clipRect| are provided this method returns |false|.
-/// Returns |true| if transforms are applied.
-///
-/// This function will transform the whole page, and would take effect to all the
-/// objects in the page.
-///
-/// page        - Page handle.
-/// matrix      - Transform matrix.
-/// clipRect    - Clipping rectangle.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_PAGE, ffi.Pointer<FS_MATRIX>, ffi.Pointer<FS_RECTF>)
->()
-external int FPDFPage_TransFormWithClip(
-  FPDF_PAGE page,
-  ffi.Pointer<FS_MATRIX> matrix,
-  ffi.Pointer<FS_RECTF> clipRect,
-);
-
-/// Transform (scale, rotate, shear, move) the clip path of page object.
-/// page_object - Handle to a page object. Returned by
-/// FPDFPageObj_NewImageObj().
-///
-/// a  - The coefficient "a" of the matrix.
-/// b  - The coefficient "b" of the matrix.
-/// c  - The coefficient "c" of the matrix.
-/// d  - The coefficient "d" of the matrix.
-/// e  - The coefficient "e" of the matrix.
-/// f  - The coefficient "f" of the matrix.
-@ffi.Native<
-  ffi.Void Function(
-    FPDF_PAGEOBJECT,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-  )
->()
-external void FPDFPageObj_TransformClipPath(
-  FPDF_PAGEOBJECT page_object,
-  double a,
-  double b,
-  double c,
-  double d,
-  double e,
-  double f,
+/// Returns the handle to the signature, or NULL on failure. The caller
+/// does not take ownership of the returned FPDF_SIGNATURE. Instead, it
+/// remains valid until FPDF_CloseDocument() is called for the document.
+@ffi.Native<FPDF_SIGNATURE Function(FPDF_DOCUMENT, ffi.Int)>()
+external FPDF_SIGNATURE FPDF_GetSignatureObject(
+  FPDF_DOCUMENT document,
+  int index,
 );
 
 /// Experimental API.
-/// Get the clip path of the page object.
+/// Function: FPDFSignatureObj_GetContents
+/// Get the contents of a signature object.
+/// Parameters:
+/// signature   -   Handle to the signature object. Returned by
+/// FPDF_GetSignatureObject().
+/// buffer      -   The address of a buffer that receives the contents.
+/// length      -   The size, in bytes, of |buffer|.
+/// Return value:
+/// Returns the number of bytes in the contents on success, 0 on error.
 ///
-/// page object - Handle to a page object. Returned by e.g.
-/// FPDFPage_GetObject().
-///
-/// Returns the handle to the clip path, or NULL on failure. The caller does not
-/// take ownership of the returned FPDF_CLIPPATH. Instead, it remains valid until
-/// FPDF_ClosePage() is called for the page containing |page_object|.
-@ffi.Native<FPDF_CLIPPATH Function(FPDF_PAGEOBJECT)>()
-external FPDF_CLIPPATH FPDFPageObj_GetClipPath(FPDF_PAGEOBJECT page_object);
-
-/// Experimental API.
-/// Get number of paths inside |clip_path|.
-///
-/// clip_path - handle to a clip_path.
-///
-/// Returns the number of objects in |clip_path| or -1 on failure.
-@ffi.Native<ffi.Int Function(FPDF_CLIPPATH)>()
-external int FPDFClipPath_CountPaths(FPDF_CLIPPATH clip_path);
-
-/// Experimental API.
-/// Get number of segments inside one path of |clip_path|.
-///
-/// clip_path  - handle to a clip_path.
-/// path_index - index into the array of paths of the clip path.
-///
-/// Returns the number of segments or -1 on failure.
-@ffi.Native<ffi.Int Function(FPDF_CLIPPATH, ffi.Int)>()
-external int FPDFClipPath_CountPathSegments(
-  FPDF_CLIPPATH clip_path,
-  int path_index,
-);
-
-/// Experimental API.
-/// Get segment in one specific path of |clip_path| at index.
-///
-/// clip_path     - handle to a clip_path.
-/// path_index    - the index of a path.
-/// segment_index - the index of a segment.
-///
-/// Returns the handle to the segment, or NULL on failure. The caller does not
-/// take ownership of the returned FPDF_PATHSEGMENT. Instead, it remains valid
-/// until FPDF_ClosePage() is called for the page containing |clip_path|.
-@ffi.Native<FPDF_PATHSEGMENT Function(FPDF_CLIPPATH, ffi.Int, ffi.Int)>()
-external FPDF_PATHSEGMENT FPDFClipPath_GetPathSegment(
-  FPDF_CLIPPATH clip_path,
-  int path_index,
-  int segment_index,
-);
-
-/// Create a new clip path, with a rectangle inserted.
-///
-/// Caller takes ownership of the returned FPDF_CLIPPATH. It should be freed with
-/// FPDF_DestroyClipPath().
-///
-/// left   - The left of the clip box.
-/// bottom - The bottom of the clip box.
-/// right  - The right of the clip box.
-/// top    - The top of the clip box.
+/// For public-key signatures, |buffer| is either a DER-encoded PKCS#1 binary or
+/// a DER-encoded PKCS#7 binary. If |length| is less than the returned length, or
+/// |buffer| is NULL, |buffer| will not be modified.
 @ffi.Native<
-  FPDF_CLIPPATH Function(ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+  ffi.UnsignedLong Function(
+    FPDF_SIGNATURE,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
 >()
-external FPDF_CLIPPATH FPDF_CreateClipPath(
-  double left,
-  double bottom,
-  double right,
-  double top,
+external int FPDFSignatureObj_GetContents(
+  FPDF_SIGNATURE signature,
+  ffi.Pointer<ffi.Void> buffer,
+  int length,
 );
 
-/// Destroy the clip path.
+/// Experimental API.
+/// Function: FPDFSignatureObj_GetByteRange
+/// Get the byte range of a signature object.
+/// Parameters:
+/// signature   -   Handle to the signature object. Returned by
+/// FPDF_GetSignatureObject().
+/// buffer      -   The address of a buffer that receives the
+/// byte range.
+/// length      -   The size, in ints, of |buffer|.
+/// Return value:
+/// Returns the number of ints in the byte range on
+/// success, 0 on error.
 ///
-/// clipPath - A handle to the clip path. It will be invalid after this call.
-@ffi.Native<ffi.Void Function(FPDF_CLIPPATH)>()
-external void FPDF_DestroyClipPath(FPDF_CLIPPATH clipPath);
+/// |buffer| is an array of pairs of integers (starting byte offset,
+/// length in bytes) that describes the exact byte range for the digest
+/// calculation. If |length| is less than the returned length, or
+/// |buffer| is NULL, |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_SIGNATURE,
+    ffi.Pointer<ffi.Int>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFSignatureObj_GetByteRange(
+  FPDF_SIGNATURE signature,
+  ffi.Pointer<ffi.Int> buffer,
+  int length,
+);
 
-/// Clip the page content, the page content that outside the clipping region
-/// become invisible.
+/// Experimental API.
+/// Function: FPDFSignatureObj_GetSubFilter
+/// Get the encoding of the value of a signature object.
+/// Parameters:
+/// signature   -   Handle to the signature object. Returned by
+/// FPDF_GetSignatureObject().
+/// buffer      -   The address of a buffer that receives the encoding.
+/// length      -   The size, in bytes, of |buffer|.
+/// Return value:
+/// Returns the number of bytes in the encoding name (including the
+/// trailing NUL character) on success, 0 on error.
 ///
-/// A clip path will be inserted before the page content stream or content array.
-/// In this way, the page content will be clipped by this clip path.
+/// The |buffer| is always encoded in 7-bit ASCII. If |length| is less than the
+/// returned length, or |buffer| is NULL, |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_SIGNATURE,
+    ffi.Pointer<ffi.Char>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFSignatureObj_GetSubFilter(
+  FPDF_SIGNATURE signature,
+  ffi.Pointer<ffi.Char> buffer,
+  int length,
+);
+
+/// Experimental API.
+/// Function: FPDFSignatureObj_GetReason
+/// Get the reason (comment) of the signature object.
+/// Parameters:
+/// signature   -   Handle to the signature object. Returned by
+/// FPDF_GetSignatureObject().
+/// buffer      -   The address of a buffer that receives the reason.
+/// length      -   The size, in bytes, of |buffer|.
+/// Return value:
+/// Returns the number of bytes in the reason on success, 0 on error.
 ///
-/// page        - A page handle.
-/// clipPath    - A handle to the clip path. (Does not take ownership.)
-@ffi.Native<ffi.Void Function(FPDF_PAGE, FPDF_CLIPPATH)>()
-external void FPDFPage_InsertClipPath(FPDF_PAGE page, FPDF_CLIPPATH clipPath);
+/// Regardless of the platform, the |buffer| is always in UTF-16LE encoding. The
+/// string is terminated by a UTF16 NUL character. If |length| is less than the
+/// returned length, or |buffer| is NULL, |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_SIGNATURE,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFSignatureObj_GetReason(
+  FPDF_SIGNATURE signature,
+  ffi.Pointer<ffi.Void> buffer,
+  int length,
+);
+
+/// Experimental API.
+/// Function: FPDFSignatureObj_GetTime
+/// Get the time of signing of a signature object.
+/// Parameters:
+/// signature   -   Handle to the signature object. Returned by
+/// FPDF_GetSignatureObject().
+/// buffer      -   The address of a buffer that receives the time.
+/// length      -   The size, in bytes, of |buffer|.
+/// Return value:
+/// Returns the number of bytes in the encoding name (including the
+/// trailing NUL character) on success, 0 on error.
+///
+/// The |buffer| is always encoded in 7-bit ASCII. If |length| is less than the
+/// returned length, or |buffer| is NULL, |buffer| will not be modified.
+///
+/// The format of time is expected to be D:YYYYMMDDHHMMSS+XX'YY', i.e. it's
+/// percision is seconds, with timezone information. This value should be used
+/// only when the time of signing is not available in the (PKCS#7 binary)
+/// signature.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_SIGNATURE,
+    ffi.Pointer<ffi.Char>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFSignatureObj_GetTime(
+  FPDF_SIGNATURE signature,
+  ffi.Pointer<ffi.Char> buffer,
+  int length,
+);
+
+/// Experimental API.
+/// Function: FPDFSignatureObj_GetDocMDPPermission
+/// Get the DocMDP permission of a signature object.
+/// Parameters:
+/// signature   -   Handle to the signature object. Returned by
+/// FPDF_GetSignatureObject().
+/// Return value:
+/// Returns the permission (1, 2 or 3) on success, 0 on error.
+@ffi.Native<ffi.UnsignedInt Function(FPDF_SIGNATURE)>()
+external int FPDFSignatureObj_GetDocMDPPermission(FPDF_SIGNATURE signature);
 
 /// Get the character index in |text_page| internal character list.
 ///
@@ -2331,80 +3203,6 @@ external int FPDFText_GetCharIndexFromTextIndex(
 external int FPDFText_GetTextIndexFromCharIndex(
   FPDF_TEXTPAGE text_page,
   int nCharIndex,
-);
-
-/// Experimental API.
-/// Get the number of JavaScript actions in |document|.
-///
-/// document - handle to a document.
-///
-/// Returns the number of JavaScript actions in |document| or -1 on error.
-@ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
-external int FPDFDoc_GetJavaScriptActionCount(FPDF_DOCUMENT document);
-
-/// Experimental API.
-/// Get the JavaScript action at |index| in |document|.
-///
-/// document - handle to a document.
-/// index    - the index of the requested JavaScript action.
-///
-/// Returns the handle to the JavaScript action, or NULL on failure.
-/// Caller owns the returned handle and must close it with
-/// FPDFDoc_CloseJavaScriptAction().
-@ffi.Native<FPDF_JAVASCRIPT_ACTION Function(FPDF_DOCUMENT, ffi.Int)>()
-external FPDF_JAVASCRIPT_ACTION FPDFDoc_GetJavaScriptAction(
-  FPDF_DOCUMENT document,
-  int index,
-);
-
-/// javascript - Handle to a JavaScript action.
-@ffi.Native<ffi.Void Function(FPDF_JAVASCRIPT_ACTION)>()
-external void FPDFDoc_CloseJavaScriptAction(FPDF_JAVASCRIPT_ACTION javascript);
-
-/// Experimental API.
-/// Get the name from the |javascript| handle. |buffer| is only modified if
-/// |buflen| is longer than the length of the name. On errors, |buffer| is
-/// unmodified and the returned length is 0.
-///
-/// javascript - handle to an JavaScript action.
-/// buffer     - buffer for holding the name, encoded in UTF-16LE.
-/// buflen     - length of the buffer in bytes.
-///
-/// Returns the length of the JavaScript action name in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_JAVASCRIPT_ACTION,
-    ffi.Pointer<FPDF_WCHAR>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFJavaScriptAction_GetName(
-  FPDF_JAVASCRIPT_ACTION javascript,
-  ffi.Pointer<FPDF_WCHAR> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Get the script from the |javascript| handle. |buffer| is only modified if
-/// |buflen| is longer than the length of the script. On errors, |buffer| is
-/// unmodified and the returned length is 0.
-///
-/// javascript - handle to an JavaScript action.
-/// buffer     - buffer for holding the name, encoded in UTF-16LE.
-/// buflen     - length of the buffer in bytes.
-///
-/// Returns the length of the JavaScript action name in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_JAVASCRIPT_ACTION,
-    ffi.Pointer<FPDF_WCHAR>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFJavaScriptAction_GetScript(
-  FPDF_JAVASCRIPT_ACTION javascript,
-  ffi.Pointer<FPDF_WCHAR> buffer,
-  int buflen,
 );
 
 @ffi.Native<ffi.Int>()
@@ -2607,185 +3405,196 @@ external int stbi_write_jpg_to_func(
 @ffi.Native<ffi.Void Function(ffi.Int)>()
 external void stbi_flip_vertically_on_write(int flip_boolean);
 
-/// Experimental API.
-/// Function: FPDF_GetSignatureCount
-/// Get total number of signatures in the document.
-/// Parameters:
-/// document    -   Handle to document. Returned by FPDF_LoadDocument().
-/// Return value:
-/// Total number of signatures in the document on success, -1 on error.
+/// Create a document availability provider.
+///
+/// file_avail - pointer to file availability interface.
+/// file       - pointer to a file access interface.
+///
+/// Returns a handle to the document availability provider, or NULL on error.
+///
+/// FPDFAvail_Destroy() must be called when done with the availability provider.
+@ffi.Native<
+  FPDF_AVAIL Function(ffi.Pointer<FX_FILEAVAIL>, ffi.Pointer<FPDF_FILEACCESS>)
+>()
+external FPDF_AVAIL FPDFAvail_Create(
+  ffi.Pointer<FX_FILEAVAIL> file_avail,
+  ffi.Pointer<FPDF_FILEACCESS> file,
+);
+
+/// Destroy the |avail| document availability provider.
+///
+/// avail - handle to document availability provider to be destroyed.
+@ffi.Native<ffi.Void Function(FPDF_AVAIL)>()
+external void FPDFAvail_Destroy(FPDF_AVAIL avail);
+
+/// Checks if the document is ready for loading, if not, gets download hints.
+///
+/// avail - handle to document availability provider.
+/// hints - pointer to a download hints interface.
+///
+/// Returns one of:
+/// PDF_DATA_ERROR: A common error is returned. Data availability unknown.
+/// PDF_DATA_NOTAVAIL: Data not yet available.
+/// PDF_DATA_AVAIL: Data available.
+///
+/// Applications should call this function whenever new data arrives, and process
+/// all the generated download hints, if any, until the function returns
+/// |PDF_DATA_ERROR| or |PDF_DATA_AVAIL|.
+/// if hints is nullptr, the function just check current document availability.
+///
+/// Once all data is available, call FPDFAvail_GetDocument() to get a document
+/// handle.
+@ffi.Native<ffi.Int Function(FPDF_AVAIL, ffi.Pointer<FX_DOWNLOADHINTS>)>()
+external int FPDFAvail_IsDocAvail(
+  FPDF_AVAIL avail,
+  ffi.Pointer<FX_DOWNLOADHINTS> hints,
+);
+
+/// Get document from the availability provider.
+///
+/// avail    - handle to document availability provider.
+/// password - password for decrypting the PDF file. Optional.
+///
+/// Returns a handle to the document.
+///
+/// When FPDFAvail_IsDocAvail() returns TRUE, call FPDFAvail_GetDocument() to
+/// retrieve the document handle.
+/// See the comments for FPDF_LoadDocument() regarding the encoding for
+/// |password|.
+@ffi.Native<FPDF_DOCUMENT Function(FPDF_AVAIL, FPDF_BYTESTRING)>()
+external FPDF_DOCUMENT FPDFAvail_GetDocument(
+  FPDF_AVAIL avail,
+  FPDF_BYTESTRING password,
+);
+
+/// Get the page number for the first available page in a linearized PDF.
+///
+/// doc - document handle.
+///
+/// Returns the zero-based index for the first available page.
+///
+/// For most linearized PDFs, the first available page will be the first page,
+/// however, some PDFs might make another page the first available page.
+/// For non-linearized PDFs, this function will always return zero.
 @ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
-external int FPDF_GetSignatureCount(FPDF_DOCUMENT document);
+external int FPDFAvail_GetFirstPageNum(FPDF_DOCUMENT doc);
 
-/// Experimental API.
-/// Function: FPDF_GetSignatureObject
-/// Get the Nth signature of the document.
+/// Check if |page_index| is ready for loading, if not, get the
+/// |FX_DOWNLOADHINTS|.
+///
+/// avail      - handle to document availability provider.
+/// page_index - index number of the page. Zero for the first page.
+/// hints      - pointer to a download hints interface. Populated if
+/// |page_index| is not available.
+///
+/// Returns one of:
+/// PDF_DATA_ERROR: A common error is returned. Data availability unknown.
+/// PDF_DATA_NOTAVAIL: Data not yet available.
+/// PDF_DATA_AVAIL: Data available.
+///
+/// This function can be called only after FPDFAvail_GetDocument() is called.
+/// Applications should call this function whenever new data arrives and process
+/// all the generated download |hints|, if any, until this function returns
+/// |PDF_DATA_ERROR| or |PDF_DATA_AVAIL|. Applications can then perform page
+/// loading.
+/// if hints is nullptr, the function just check current availability of
+/// specified page.
+@ffi.Native<
+  ffi.Int Function(FPDF_AVAIL, ffi.Int, ffi.Pointer<FX_DOWNLOADHINTS>)
+>()
+external int FPDFAvail_IsPageAvail(
+  FPDF_AVAIL avail,
+  int page_index,
+  ffi.Pointer<FX_DOWNLOADHINTS> hints,
+);
+
+/// Check if form data is ready for initialization, if not, get the
+/// |FX_DOWNLOADHINTS|.
+///
+/// avail - handle to document availability provider.
+/// hints - pointer to a download hints interface. Populated if form is not
+/// ready for initialization.
+///
+/// Returns one of:
+/// PDF_FORM_ERROR: A common eror, in general incorrect parameters.
+/// PDF_FORM_NOTAVAIL: Data not available.
+/// PDF_FORM_AVAIL: Data available.
+/// PDF_FORM_NOTEXIST: No form data.
+///
+/// This function can be called only after FPDFAvail_GetDocument() is called.
+/// The application should call this function whenever new data arrives and
+/// process all the generated download |hints|, if any, until the function
+/// |PDF_FORM_ERROR|, |PDF_FORM_AVAIL| or |PDF_FORM_NOTEXIST|.
+/// if hints is nullptr, the function just check current form availability.
+///
+/// Applications can then perform page loading. It is recommend to call
+/// FPDFDOC_InitFormFillEnvironment() when |PDF_FORM_AVAIL| is returned.
+@ffi.Native<ffi.Int Function(FPDF_AVAIL, ffi.Pointer<FX_DOWNLOADHINTS>)>()
+external int FPDFAvail_IsFormAvail(
+  FPDF_AVAIL avail,
+  ffi.Pointer<FX_DOWNLOADHINTS> hints,
+);
+
+/// Check whether a document is a linearized PDF.
+///
+/// avail - handle to document availability provider.
+///
+/// Returns one of:
+/// PDF_LINEARIZED
+/// PDF_NOT_LINEARIZED
+/// PDF_LINEARIZATION_UNKNOWN
+///
+/// FPDFAvail_IsLinearized() will return |PDF_LINEARIZED| or |PDF_NOT_LINEARIZED|
+/// when we have 1k  of data. If the files size less than 1k, it returns
+/// |PDF_LINEARIZATION_UNKNOWN| as there is insufficient information to determine
+/// if the PDF is linearlized.
+@ffi.Native<ffi.Int Function(FPDF_AVAIL)>()
+external int FPDFAvail_IsLinearized(FPDF_AVAIL avail);
+
+/// Function: FPDF_SaveAsCopy
+/// Saves the copy of specified document in custom way.
 /// Parameters:
-/// document    -   Handle to document. Returned by FPDF_LoadDocument().
-/// index       -   Index into the array of signatures of the document.
+/// document        -   Handle to document, as returned by
+/// FPDF_LoadDocument() or FPDF_CreateNewDocument().
+/// file_write      -   A pointer to a custom file write structure.
+/// flags           -   Flags above that affect how the PDF gets saved.
+/// Pass in 0 when there are no flags.
 /// Return value:
-/// Returns the handle to the signature, or NULL on failure. The caller
-/// does not take ownership of the returned FPDF_SIGNATURE. Instead, it
-/// remains valid until FPDF_CloseDocument() is called for the document.
-@ffi.Native<FPDF_SIGNATURE Function(FPDF_DOCUMENT, ffi.Int)>()
-external FPDF_SIGNATURE FPDF_GetSignatureObject(
+/// TRUE for succeed, FALSE for failed.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_DOCUMENT, ffi.Pointer<FPDF_FILEWRITE>, FPDF_DWORD)
+>()
+external int FPDF_SaveAsCopy(
   FPDF_DOCUMENT document,
-  int index,
+  ffi.Pointer<FPDF_FILEWRITE> file_write,
+  int flags,
 );
 
-/// Experimental API.
-/// Function: FPDFSignatureObj_GetContents
-/// Get the contents of a signature object.
+/// Function: FPDF_SaveWithVersion
+/// Same as FPDF_SaveAsCopy(), except the file version of the
+/// saved document can be specified by the caller.
 /// Parameters:
-/// signature   -   Handle to the signature object. Returned by
-/// FPDF_GetSignatureObject().
-/// buffer      -   The address of a buffer that receives the contents.
-/// length      -   The size, in bytes, of |buffer|.
+/// document        -   Handle to document.
+/// file_write      -   A pointer to a custom file write structure.
+/// flags           -   The creating flags.
+/// file_version    -   The PDF file version. File version: 14 for 1.4,
+/// 15 for 1.5, ...
 /// Return value:
-/// Returns the number of bytes in the contents on success, 0 on error.
-///
-/// For public-key signatures, |buffer| is either a DER-encoded PKCS#1 binary or
-/// a DER-encoded PKCS#7 binary. If |length| is less than the returned length, or
-/// |buffer| is NULL, |buffer| will not be modified.
+/// TRUE if succeed, FALSE if failed.
 @ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_SIGNATURE,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
+  FPDF_BOOL Function(
+    FPDF_DOCUMENT,
+    ffi.Pointer<FPDF_FILEWRITE>,
+    FPDF_DWORD,
+    ffi.Int,
   )
 >()
-external int FPDFSignatureObj_GetContents(
-  FPDF_SIGNATURE signature,
-  ffi.Pointer<ffi.Void> buffer,
-  int length,
+external int FPDF_SaveWithVersion(
+  FPDF_DOCUMENT document,
+  ffi.Pointer<FPDF_FILEWRITE> file_write,
+  int flags,
+  int file_version,
 );
-
-/// Experimental API.
-/// Function: FPDFSignatureObj_GetByteRange
-/// Get the byte range of a signature object.
-/// Parameters:
-/// signature   -   Handle to the signature object. Returned by
-/// FPDF_GetSignatureObject().
-/// buffer      -   The address of a buffer that receives the
-/// byte range.
-/// length      -   The size, in ints, of |buffer|.
-/// Return value:
-/// Returns the number of ints in the byte range on
-/// success, 0 on error.
-///
-/// |buffer| is an array of pairs of integers (starting byte offset,
-/// length in bytes) that describes the exact byte range for the digest
-/// calculation. If |length| is less than the returned length, or
-/// |buffer| is NULL, |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_SIGNATURE,
-    ffi.Pointer<ffi.Int>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFSignatureObj_GetByteRange(
-  FPDF_SIGNATURE signature,
-  ffi.Pointer<ffi.Int> buffer,
-  int length,
-);
-
-/// Experimental API.
-/// Function: FPDFSignatureObj_GetSubFilter
-/// Get the encoding of the value of a signature object.
-/// Parameters:
-/// signature   -   Handle to the signature object. Returned by
-/// FPDF_GetSignatureObject().
-/// buffer      -   The address of a buffer that receives the encoding.
-/// length      -   The size, in bytes, of |buffer|.
-/// Return value:
-/// Returns the number of bytes in the encoding name (including the
-/// trailing NUL character) on success, 0 on error.
-///
-/// The |buffer| is always encoded in 7-bit ASCII. If |length| is less than the
-/// returned length, or |buffer| is NULL, |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_SIGNATURE,
-    ffi.Pointer<ffi.Char>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFSignatureObj_GetSubFilter(
-  FPDF_SIGNATURE signature,
-  ffi.Pointer<ffi.Char> buffer,
-  int length,
-);
-
-/// Experimental API.
-/// Function: FPDFSignatureObj_GetReason
-/// Get the reason (comment) of the signature object.
-/// Parameters:
-/// signature   -   Handle to the signature object. Returned by
-/// FPDF_GetSignatureObject().
-/// buffer      -   The address of a buffer that receives the reason.
-/// length      -   The size, in bytes, of |buffer|.
-/// Return value:
-/// Returns the number of bytes in the reason on success, 0 on error.
-///
-/// Regardless of the platform, the |buffer| is always in UTF-16LE encoding. The
-/// string is terminated by a UTF16 NUL character. If |length| is less than the
-/// returned length, or |buffer| is NULL, |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_SIGNATURE,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFSignatureObj_GetReason(
-  FPDF_SIGNATURE signature,
-  ffi.Pointer<ffi.Void> buffer,
-  int length,
-);
-
-/// Experimental API.
-/// Function: FPDFSignatureObj_GetTime
-/// Get the time of signing of a signature object.
-/// Parameters:
-/// signature   -   Handle to the signature object. Returned by
-/// FPDF_GetSignatureObject().
-/// buffer      -   The address of a buffer that receives the time.
-/// length      -   The size, in bytes, of |buffer|.
-/// Return value:
-/// Returns the number of bytes in the encoding name (including the
-/// trailing NUL character) on success, 0 on error.
-///
-/// The |buffer| is always encoded in 7-bit ASCII. If |length| is less than the
-/// returned length, or |buffer| is NULL, |buffer| will not be modified.
-///
-/// The format of time is expected to be D:YYYYMMDDHHMMSS+XX'YY', i.e. it's
-/// percision is seconds, with timezone information. This value should be used
-/// only when the time of signing is not available in the (PKCS#7 binary)
-/// signature.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_SIGNATURE,
-    ffi.Pointer<ffi.Char>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFSignatureObj_GetTime(
-  FPDF_SIGNATURE signature,
-  ffi.Pointer<ffi.Char> buffer,
-  int length,
-);
-
-/// Experimental API.
-/// Function: FPDFSignatureObj_GetDocMDPPermission
-/// Get the DocMDP permission of a signature object.
-/// Parameters:
-/// signature   -   Handle to the signature object. Returned by
-/// FPDF_GetSignatureObject().
-/// Return value:
-/// Returns the permission (1, 2 or 3) on success, 0 on error.
-@ffi.Native<ffi.UnsignedInt Function(FPDF_SIGNATURE)>()
-external int FPDFSignatureObj_GetDocMDPPermission(FPDF_SIGNATURE signature);
 
 /// Function: FPDFDOC_InitFormFillEnvironment
 /// Initialize form fill environment.
@@ -3672,6 +4481,231 @@ external int FORM_IsIndexSelected(
 /// into PDFium, performs no action and always returns FALSE.
 @ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT)>()
 external int FPDF_LoadXFA(FPDF_DOCUMENT document);
+
+/// Experimental API.
+/// Gets the decoded data from the thumbnail of |page| if it exists.
+/// This only modifies |buffer| if |buflen| less than or equal to the
+/// size of the decoded data. Returns the size of the decoded
+/// data or 0 if thumbnail DNE. Optional, pass null to just retrieve
+/// the size of the buffer needed.
+///
+/// page    - handle to a page.
+/// buffer  - buffer for holding the decoded image data.
+/// buflen  - length of the buffer in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(FPDF_PAGE, ffi.Pointer<ffi.Void>, ffi.UnsignedLong)
+>()
+external int FPDFPage_GetDecodedThumbnailData(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Gets the raw data from the thumbnail of |page| if it exists.
+/// This only modifies |buffer| if |buflen| is less than or equal to
+/// the size of the raw data. Returns the size of the raw data or 0
+/// if thumbnail DNE. Optional, pass null to just retrieve the size
+/// of the buffer needed.
+///
+/// page    - handle to a page.
+/// buffer  - buffer for holding the raw image data.
+/// buflen  - length of the buffer in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(FPDF_PAGE, ffi.Pointer<ffi.Void>, ffi.UnsignedLong)
+>()
+external int FPDFPage_GetRawThumbnailData(
+  FPDF_PAGE page,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Returns the thumbnail of |page| as a FPDF_BITMAP. Returns a nullptr
+/// if unable to access the thumbnail's stream.
+///
+/// page - handle to a page.
+@ffi.Native<FPDF_BITMAP Function(FPDF_PAGE)>()
+external FPDF_BITMAP FPDFPage_GetThumbnailAsBitmap(FPDF_PAGE page);
+
+/// Function: FPDF_GetDefaultTTFMap
+/// Returns a pointer to the default character set to TT Font name map. The
+/// map is an array of FPDF_CharsetFontMap structs, with its end indicated
+/// by a { -1, NULL } entry.
+/// Parameters:
+/// None.
+/// Return Value:
+/// Pointer to the Charset Font Map.
+/// Note:
+/// Once FPDF_GetDefaultTTFMapCount() and FPDF_GetDefaultTTFMapEntry() are no
+/// longer experimental, this API will be marked as deprecated.
+/// See https://crbug.com/348468114
+@ffi.Native<ffi.Pointer<FPDF_CharsetFontMap> Function()>()
+external ffi.Pointer<FPDF_CharsetFontMap> FPDF_GetDefaultTTFMap();
+
+/// Experimental API.
+///
+/// Function: FPDF_GetDefaultTTFMapCount
+/// Returns the number of entries in the default character set to TT Font name
+/// map.
+/// Parameters:
+/// None.
+/// Return Value:
+/// The number of entries in the map.
+@ffi.Native<ffi.Size Function()>()
+external int FPDF_GetDefaultTTFMapCount();
+
+/// Experimental API.
+///
+/// Function: FPDF_GetDefaultTTFMapEntry
+/// Returns an entry in the default character set to TT Font name map.
+/// Parameters:
+/// index    -   The index to the entry in the map to retrieve.
+/// Return Value:
+/// A pointer to the entry, if it is in the map, or NULL if the index is out
+/// of bounds.
+@ffi.Native<ffi.Pointer<FPDF_CharsetFontMap> Function(ffi.Size)>()
+external ffi.Pointer<FPDF_CharsetFontMap> FPDF_GetDefaultTTFMapEntry(int index);
+
+/// Function: FPDF_AddInstalledFont
+/// Add a system font to the list in PDFium.
+/// Comments:
+/// This function is only called during the system font list building
+/// process.
+/// Parameters:
+/// mapper          -   Opaque pointer to Foxit font mapper
+/// face            -   The font face name
+/// charset         -   Font character set. See above defined constants.
+/// Return Value:
+/// None.
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
+>()
+external void FPDF_AddInstalledFont(
+  ffi.Pointer<ffi.Void> mapper,
+  ffi.Pointer<ffi.Char> face,
+  int charset,
+);
+
+/// Function: FPDF_SetSystemFontInfo
+/// Set the system font info interface into PDFium
+/// Parameters:
+/// font_info       -   Pointer to a FPDF_SYSFONTINFO structure
+/// Return Value:
+/// None
+/// Comments:
+/// Platform support implementation should implement required methods of
+/// FFDF_SYSFONTINFO interface, then call this function during PDFium
+/// initialization process.
+///
+/// Call this with NULL to tell PDFium to stop using a previously set
+/// |FPDF_SYSFONTINFO|.
+@ffi.Native<ffi.Void Function(ffi.Pointer<FPDF_SYSFONTINFO>)>()
+external void FPDF_SetSystemFontInfo(ffi.Pointer<FPDF_SYSFONTINFO> font_info);
+
+/// Function: FPDF_GetDefaultSystemFontInfo
+/// Get default system font info interface for current platform
+/// Parameters:
+/// None
+/// Return Value:
+/// Pointer to a FPDF_SYSFONTINFO structure describing the default
+/// interface, or NULL if the platform doesn't have a default interface.
+/// Application should call FPDF_FreeDefaultSystemFontInfo to free the
+/// returned pointer.
+/// Comments:
+/// For some platforms, PDFium implements a default version of system
+/// font info interface. The default implementation can be passed to
+/// FPDF_SetSystemFontInfo().
+@ffi.Native<ffi.Pointer<FPDF_SYSFONTINFO> Function()>()
+external ffi.Pointer<FPDF_SYSFONTINFO> FPDF_GetDefaultSystemFontInfo();
+
+/// Function: FPDF_FreeDefaultSystemFontInfo
+/// Free a default system font info interface
+/// Parameters:
+/// font_info       -   Pointer to a FPDF_SYSFONTINFO structure
+/// Return Value:
+/// None
+/// Comments:
+/// This function should be called on the output from
+/// FPDF_GetDefaultSystemFontInfo() once it is no longer needed.
+@ffi.Native<ffi.Void Function(ffi.Pointer<FPDF_SYSFONTINFO>)>()
+external void FPDF_FreeDefaultSystemFontInfo(
+  ffi.Pointer<FPDF_SYSFONTINFO> font_info,
+);
+
+/// Experimental API.
+/// Get the number of JavaScript actions in |document|.
+///
+/// document - handle to a document.
+///
+/// Returns the number of JavaScript actions in |document| or -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
+external int FPDFDoc_GetJavaScriptActionCount(FPDF_DOCUMENT document);
+
+/// Experimental API.
+/// Get the JavaScript action at |index| in |document|.
+///
+/// document - handle to a document.
+/// index    - the index of the requested JavaScript action.
+///
+/// Returns the handle to the JavaScript action, or NULL on failure.
+/// Caller owns the returned handle and must close it with
+/// FPDFDoc_CloseJavaScriptAction().
+@ffi.Native<FPDF_JAVASCRIPT_ACTION Function(FPDF_DOCUMENT, ffi.Int)>()
+external FPDF_JAVASCRIPT_ACTION FPDFDoc_GetJavaScriptAction(
+  FPDF_DOCUMENT document,
+  int index,
+);
+
+/// javascript - Handle to a JavaScript action.
+@ffi.Native<ffi.Void Function(FPDF_JAVASCRIPT_ACTION)>()
+external void FPDFDoc_CloseJavaScriptAction(FPDF_JAVASCRIPT_ACTION javascript);
+
+/// Experimental API.
+/// Get the name from the |javascript| handle. |buffer| is only modified if
+/// |buflen| is longer than the length of the name. On errors, |buffer| is
+/// unmodified and the returned length is 0.
+///
+/// javascript - handle to an JavaScript action.
+/// buffer     - buffer for holding the name, encoded in UTF-16LE.
+/// buflen     - length of the buffer in bytes.
+///
+/// Returns the length of the JavaScript action name in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_JAVASCRIPT_ACTION,
+    ffi.Pointer<FPDF_WCHAR>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFJavaScriptAction_GetName(
+  FPDF_JAVASCRIPT_ACTION javascript,
+  ffi.Pointer<FPDF_WCHAR> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Get the script from the |javascript| handle. |buffer| is only modified if
+/// |buflen| is longer than the length of the script. On errors, |buffer| is
+/// unmodified and the returned length is 0.
+///
+/// javascript - handle to an JavaScript action.
+/// buffer     - buffer for holding the name, encoded in UTF-16LE.
+/// buflen     - length of the buffer in bytes.
+///
+/// Returns the length of the JavaScript action name in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_JAVASCRIPT_ACTION,
+    ffi.Pointer<FPDF_WCHAR>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFJavaScriptAction_GetScript(
+  FPDF_JAVASCRIPT_ACTION javascript,
+  ffi.Pointer<FPDF_WCHAR> buffer,
+  int buflen,
+);
 
 /// Experimental API.
 /// Check if an annotation subtype is currently supported for creation.
@@ -4885,163 +5919,677 @@ external FPDF_ATTACHMENT FPDFAnnot_AddFileAttachment(
   FPDF_WIDESTRING name,
 );
 
-/// Flatten annotations and form fields into the page contents.
-///
-/// page  - handle to the page.
-/// nFlag - One of the |FLAT_*| values denoting the page usage.
-///
-/// Returns one of the |FLATTEN_*| values.
-///
-/// Currently, all failures return |FLATTEN_FAIL| with no indication of the
-/// cause.
-@ffi.Native<ffi.Int Function(FPDF_PAGE, ffi.Int)>()
-external int FPDFPage_Flatten(FPDF_PAGE page, int nFlag);
+/// Function: FPDF_StructTree_GetForPage
+/// Get the structure tree for a page.
+/// Parameters:
+/// page        -   Handle to the page, as returned by FPDF_LoadPage().
+/// Return value:
+/// A handle to the structure tree or NULL on error. The caller owns the
+/// returned handle and must use FPDF_StructTree_Close() to release it.
+/// The handle should be released before |page| gets released.
+@ffi.Native<FPDF_STRUCTTREE Function(FPDF_PAGE)>()
+external FPDF_STRUCTTREE FPDF_StructTree_GetForPage(FPDF_PAGE page);
 
-/// Create a document availability provider.
-///
-/// file_avail - pointer to file availability interface.
-/// file       - pointer to a file access interface.
-///
-/// Returns a handle to the document availability provider, or NULL on error.
-///
-/// FPDFAvail_Destroy() must be called when done with the availability provider.
+/// Function: FPDF_StructTree_Close
+/// Release a resource allocated by FPDF_StructTree_GetForPage().
+/// Parameters:
+/// struct_tree -   Handle to the structure tree, as returned by
+/// FPDF_StructTree_LoadPage().
+/// Return value:
+/// None.
+@ffi.Native<ffi.Void Function(FPDF_STRUCTTREE)>()
+external void FPDF_StructTree_Close(FPDF_STRUCTTREE struct_tree);
+
+/// Function: FPDF_StructTree_CountChildren
+/// Count the number of children for the structure tree.
+/// Parameters:
+/// struct_tree -   Handle to the structure tree, as returned by
+/// FPDF_StructTree_LoadPage().
+/// Return value:
+/// The number of children, or -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTTREE)>()
+external int FPDF_StructTree_CountChildren(FPDF_STRUCTTREE struct_tree);
+
+/// Function: FPDF_StructTree_GetChildAtIndex
+/// Get a child in the structure tree.
+/// Parameters:
+/// struct_tree -   Handle to the structure tree, as returned by
+/// FPDF_StructTree_LoadPage().
+/// index       -   The index for the child, 0-based.
+/// Return value:
+/// The child at the n-th index or NULL on error. The caller does not
+/// own the handle. The handle remains valid as long as |struct_tree|
+/// remains valid.
+/// Comments:
+/// The |index| must be less than the FPDF_StructTree_CountChildren()
+/// return value.
+@ffi.Native<FPDF_STRUCTELEMENT Function(FPDF_STRUCTTREE, ffi.Int)>()
+external FPDF_STRUCTELEMENT FPDF_StructTree_GetChildAtIndex(
+  FPDF_STRUCTTREE struct_tree,
+  int index,
+);
+
+/// Function: FPDF_StructElement_GetAltText
+/// Get the alt text for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// buffer         -   A buffer for output the alt text. May be NULL.
+/// buflen         -   The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the alt text, including the terminating NUL
+/// character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
 @ffi.Native<
-  FPDF_AVAIL Function(ffi.Pointer<FX_FILEAVAIL>, ffi.Pointer<FPDF_FILEACCESS>)
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
 >()
-external FPDF_AVAIL FPDFAvail_Create(
-  ffi.Pointer<FX_FILEAVAIL> file_avail,
-  ffi.Pointer<FPDF_FILEACCESS> file,
+external int FPDF_StructElement_GetAltText(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
 );
 
-/// Destroy the |avail| document availability provider.
-///
-/// avail - handle to document availability provider to be destroyed.
-@ffi.Native<ffi.Void Function(FPDF_AVAIL)>()
-external void FPDFAvail_Destroy(FPDF_AVAIL avail);
-
-/// Checks if the document is ready for loading, if not, gets download hints.
-///
-/// avail - handle to document availability provider.
-/// hints - pointer to a download hints interface.
-///
-/// Returns one of:
-/// PDF_DATA_ERROR: A common error is returned. Data availability unknown.
-/// PDF_DATA_NOTAVAIL: Data not yet available.
-/// PDF_DATA_AVAIL: Data available.
-///
-/// Applications should call this function whenever new data arrives, and process
-/// all the generated download hints, if any, until the function returns
-/// |PDF_DATA_ERROR| or |PDF_DATA_AVAIL|.
-/// if hints is nullptr, the function just check current document availability.
-///
-/// Once all data is available, call FPDFAvail_GetDocument() to get a document
-/// handle.
-@ffi.Native<ffi.Int Function(FPDF_AVAIL, ffi.Pointer<FX_DOWNLOADHINTS>)>()
-external int FPDFAvail_IsDocAvail(
-  FPDF_AVAIL avail,
-  ffi.Pointer<FX_DOWNLOADHINTS> hints,
-);
-
-/// Get document from the availability provider.
-///
-/// avail    - handle to document availability provider.
-/// password - password for decrypting the PDF file. Optional.
-///
-/// Returns a handle to the document.
-///
-/// When FPDFAvail_IsDocAvail() returns TRUE, call FPDFAvail_GetDocument() to
-/// retrieve the document handle.
-/// See the comments for FPDF_LoadDocument() regarding the encoding for
-/// |password|.
-@ffi.Native<FPDF_DOCUMENT Function(FPDF_AVAIL, FPDF_BYTESTRING)>()
-external FPDF_DOCUMENT FPDFAvail_GetDocument(
-  FPDF_AVAIL avail,
-  FPDF_BYTESTRING password,
-);
-
-/// Get the page number for the first available page in a linearized PDF.
-///
-/// doc - document handle.
-///
-/// Returns the zero-based index for the first available page.
-///
-/// For most linearized PDFs, the first available page will be the first page,
-/// however, some PDFs might make another page the first available page.
-/// For non-linearized PDFs, this function will always return zero.
-@ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
-external int FPDFAvail_GetFirstPageNum(FPDF_DOCUMENT doc);
-
-/// Check if |page_index| is ready for loading, if not, get the
-/// |FX_DOWNLOADHINTS|.
-///
-/// avail      - handle to document availability provider.
-/// page_index - index number of the page. Zero for the first page.
-/// hints      - pointer to a download hints interface. Populated if
-/// |page_index| is not available.
-///
-/// Returns one of:
-/// PDF_DATA_ERROR: A common error is returned. Data availability unknown.
-/// PDF_DATA_NOTAVAIL: Data not yet available.
-/// PDF_DATA_AVAIL: Data available.
-///
-/// This function can be called only after FPDFAvail_GetDocument() is called.
-/// Applications should call this function whenever new data arrives and process
-/// all the generated download |hints|, if any, until this function returns
-/// |PDF_DATA_ERROR| or |PDF_DATA_AVAIL|. Applications can then perform page
-/// loading.
-/// if hints is nullptr, the function just check current availability of
-/// specified page.
+/// Experimental API.
+/// Function: FPDF_StructElement_GetActualText
+/// Get the actual text for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// buffer         -   A buffer for output the actual text. May be NULL.
+/// buflen         -   The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the actual text, including the terminating
+/// NUL character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
 @ffi.Native<
-  ffi.Int Function(FPDF_AVAIL, ffi.Int, ffi.Pointer<FX_DOWNLOADHINTS>)
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
 >()
-external int FPDFAvail_IsPageAvail(
-  FPDF_AVAIL avail,
-  int page_index,
-  ffi.Pointer<FX_DOWNLOADHINTS> hints,
+external int FPDF_StructElement_GetActualText(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
 );
 
-/// Check if form data is ready for initialization, if not, get the
-/// |FX_DOWNLOADHINTS|.
-///
-/// avail - handle to document availability provider.
-/// hints - pointer to a download hints interface. Populated if form is not
-/// ready for initialization.
-///
-/// Returns one of:
-/// PDF_FORM_ERROR: A common eror, in general incorrect parameters.
-/// PDF_FORM_NOTAVAIL: Data not available.
-/// PDF_FORM_AVAIL: Data available.
-/// PDF_FORM_NOTEXIST: No form data.
-///
-/// This function can be called only after FPDFAvail_GetDocument() is called.
-/// The application should call this function whenever new data arrives and
-/// process all the generated download |hints|, if any, until the function
-/// |PDF_FORM_ERROR|, |PDF_FORM_AVAIL| or |PDF_FORM_NOTEXIST|.
-/// if hints is nullptr, the function just check current form availability.
-///
-/// Applications can then perform page loading. It is recommend to call
-/// FPDFDOC_InitFormFillEnvironment() when |PDF_FORM_AVAIL| is returned.
-@ffi.Native<ffi.Int Function(FPDF_AVAIL, ffi.Pointer<FX_DOWNLOADHINTS>)>()
-external int FPDFAvail_IsFormAvail(
-  FPDF_AVAIL avail,
-  ffi.Pointer<FX_DOWNLOADHINTS> hints,
+/// Experimental API.
+/// Function: FPDF_StructElement_GetExpansion
+/// Get the expansion of an abbreviation or acronym for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// buffer         -   A buffer for output the expansion text. May be
+/// NULL.
+/// buflen         -   The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the expansion text, including the terminating
+/// NUL character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetExpansion(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
 );
 
-/// Check whether a document is a linearized PDF.
-///
-/// avail - handle to document availability provider.
-///
-/// Returns one of:
-/// PDF_LINEARIZED
-/// PDF_NOT_LINEARIZED
-/// PDF_LINEARIZATION_UNKNOWN
-///
-/// FPDFAvail_IsLinearized() will return |PDF_LINEARIZED| or |PDF_NOT_LINEARIZED|
-/// when we have 1k  of data. If the files size less than 1k, it returns
-/// |PDF_LINEARIZATION_UNKNOWN| as there is insufficient information to determine
-/// if the PDF is linearlized.
-@ffi.Native<ffi.Int Function(FPDF_AVAIL)>()
-external int FPDFAvail_IsLinearized(FPDF_AVAIL avail);
+/// Function: FPDF_StructElement_GetID
+/// Get the ID for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// buffer         -   A buffer for output the ID string. May be NULL.
+/// buflen         -   The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the ID string, including the terminating NUL
+/// character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetID(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetLang
+/// Get the case-insensitive IETF BCP 47 language code for an element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// buffer         -   A buffer for output the lang string. May be NULL.
+/// buflen         -   The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the ID string, including the terminating NUL
+/// character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetLang(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetStringAttribute
+/// Get a struct element attribute of type "name" or "string".
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// attr_name      -   The name of the attribute to retrieve.
+/// buffer         -   A buffer for output. May be NULL.
+/// buflen         -   The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the attribute value, including the
+/// terminating NUL character. The number of bytes is returned
+/// regardless of the |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    FPDF_BYTESTRING,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetStringAttribute(
+  FPDF_STRUCTELEMENT struct_element,
+  FPDF_BYTESTRING attr_name,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Function: FPDF_StructElement_GetMarkedContentID
+/// Get the marked content ID for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// Return value:
+/// The marked content ID of the element. If no ID exists, returns
+/// -1.
+/// Comments:
+/// FPDF_StructElement_GetMarkedContentIdAtIndex() may be able to
+/// extract more marked content IDs out of |struct_element|. This API
+/// may be deprecated in the future.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
+external int FPDF_StructElement_GetMarkedContentID(
+  FPDF_STRUCTELEMENT struct_element,
+);
+
+/// Function: FPDF_StructElement_GetType
+/// Get the type (/S) for a given element.
+/// Parameters:
+/// struct_element - Handle to the struct element.
+/// buffer         - A buffer for output. May be NULL.
+/// buflen         - The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the type, including the terminating NUL
+/// character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetType(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetObjType
+/// Get the object type (/Type) for a given element.
+/// Parameters:
+/// struct_element - Handle to the struct element.
+/// buffer         - A buffer for output. May be NULL.
+/// buflen         - The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the object type, including the terminating
+/// NUL character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetObjType(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Function: FPDF_StructElement_GetTitle
+/// Get the title (/T) for a given element.
+/// Parameters:
+/// struct_element - Handle to the struct element.
+/// buffer         - A buffer for output. May be NULL.
+/// buflen         - The length of the buffer, in bytes. May be 0.
+/// Return value:
+/// The number of bytes in the title, including the terminating NUL
+/// character. The number of bytes is returned regardless of the
+/// |buffer| and |buflen| parameters.
+/// Comments:
+/// Regardless of the platform, the |buffer| is always in UTF-16LE
+/// encoding. The string is terminated by a UTF16 NUL character. If
+/// |buflen| is less than the required length, or |buffer| is NULL,
+/// |buffer| will not be modified.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_STRUCTELEMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDF_StructElement_GetTitle(
+  FPDF_STRUCTELEMENT struct_element,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+);
+
+/// Function: FPDF_StructElement_CountChildren
+/// Count the number of children for the structure element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// Return value:
+/// The number of children, or -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
+external int FPDF_StructElement_CountChildren(
+  FPDF_STRUCTELEMENT struct_element,
+);
+
+/// Function: FPDF_StructElement_GetChildAtIndex
+/// Get a child in the structure element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// index          -   The index for the child, 0-based.
+/// Return value:
+/// The child at the n-th index or NULL on error.
+/// Comments:
+/// If the child exists but is not an element, then this function will
+/// return NULL. This will also return NULL for out of bounds indices.
+/// The |index| must be less than the FPDF_StructElement_CountChildren()
+/// return value.
+@ffi.Native<FPDF_STRUCTELEMENT Function(FPDF_STRUCTELEMENT, ffi.Int)>()
+external FPDF_STRUCTELEMENT FPDF_StructElement_GetChildAtIndex(
+  FPDF_STRUCTELEMENT struct_element,
+  int index,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetChildMarkedContentID
+/// Get the child's content id
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// index          -   The index for the child, 0-based.
+/// Return value:
+/// The marked content ID of the child. If no ID exists, returns -1.
+/// Comments:
+/// If the child exists but is not a stream or object, then this
+/// function will return -1. This will also return -1 for out of bounds
+/// indices. Compared to FPDF_StructElement_GetMarkedContentIdAtIndex,
+/// it is scoped to the current page.
+/// The |index| must be less than the FPDF_StructElement_CountChildren()
+/// return value.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT, ffi.Int)>()
+external int FPDF_StructElement_GetChildMarkedContentID(
+  FPDF_STRUCTELEMENT struct_element,
+  int index,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetParent
+/// Get the parent of the structure element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// Return value:
+/// The parent structure element or NULL on error.
+/// Comments:
+/// If structure element is StructTreeRoot, then this function will
+/// return NULL.
+@ffi.Native<FPDF_STRUCTELEMENT Function(FPDF_STRUCTELEMENT)>()
+external FPDF_STRUCTELEMENT FPDF_StructElement_GetParent(
+  FPDF_STRUCTELEMENT struct_element,
+);
+
+/// Function: FPDF_StructElement_GetAttributeCount
+/// Count the number of attributes for the structure element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// Return value:
+/// The number of attributes, or -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
+external int FPDF_StructElement_GetAttributeCount(
+  FPDF_STRUCTELEMENT struct_element,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetAttributeAtIndex
+/// Get an attribute object in the structure element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// index          -   The index for the attribute object, 0-based.
+/// Return value:
+/// The attribute object at the n-th index or NULL on error.
+/// Comments:
+/// If the attribute object exists but is not a dict, then this
+/// function will return NULL. This will also return NULL for out of
+/// bounds indices. The caller does not own the handle. The handle
+/// remains valid as long as |struct_element| remains valid.
+/// The |index| must be less than the
+/// FPDF_StructElement_GetAttributeCount() return value.
+@ffi.Native<FPDF_STRUCTELEMENT_ATTR Function(FPDF_STRUCTELEMENT, ffi.Int)>()
+external FPDF_STRUCTELEMENT_ATTR FPDF_StructElement_GetAttributeAtIndex(
+  FPDF_STRUCTELEMENT struct_element,
+  int index,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetCount
+/// Count the number of attributes in a structure element attribute map.
+/// Parameters:
+/// struct_attribute - Handle to the struct element attribute.
+/// Return value:
+/// The number of attributes, or -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT_ATTR)>()
+external int FPDF_StructElement_Attr_GetCount(
+  FPDF_STRUCTELEMENT_ATTR struct_attribute,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetName
+/// Get the name of an attribute in a structure element attribute map.
+/// Parameters:
+/// struct_attribute   - Handle to the struct element attribute.
+/// index              - The index of attribute in the map.
+/// buffer             - A buffer for output. May be NULL. This is only
+/// modified if |buflen| is longer than the length
+/// of the key. Optional, pass null to just
+/// retrieve the size of the buffer needed.
+/// buflen             - The length of the buffer.
+/// out_buflen         - A pointer to variable that will receive the
+/// minimum buffer size to contain the key. Not
+/// filled if FALSE is returned.
+/// Return value:
+/// TRUE if the operation was successful, FALSE otherwise.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_STRUCTELEMENT_ATTR,
+    ffi.Int,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+    ffi.Pointer<ffi.UnsignedLong>,
+  )
+>()
+external int FPDF_StructElement_Attr_GetName(
+  FPDF_STRUCTELEMENT_ATTR struct_attribute,
+  int index,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+  ffi.Pointer<ffi.UnsignedLong> out_buflen,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetValue
+/// Get a handle to a value for an attribute in a structure element
+/// attribute map.
+/// Parameters:
+/// struct_attribute   - Handle to the struct element attribute.
+/// name               - The attribute name.
+/// Return value:
+/// Returns a handle to the value associated with the input, if any.
+/// Returns NULL on failure. The caller does not own the handle.
+/// The handle remains valid as long as |struct_attribute| remains
+/// valid.
+@ffi.Native<
+  FPDF_STRUCTELEMENT_ATTR_VALUE Function(
+    FPDF_STRUCTELEMENT_ATTR,
+    FPDF_BYTESTRING,
+  )
+>()
+external FPDF_STRUCTELEMENT_ATTR_VALUE FPDF_StructElement_Attr_GetValue(
+  FPDF_STRUCTELEMENT_ATTR struct_attribute,
+  FPDF_BYTESTRING name,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetType
+/// Get the type of an attribute in a structure element attribute map.
+/// Parameters:
+/// value - Handle to the value.
+/// Return value:
+/// Returns the type of the value, or FPDF_OBJECT_UNKNOWN in case of
+/// failure. Note that this will never return FPDF_OBJECT_REFERENCE, as
+/// references are always dereferenced.
+@ffi.Native<FPDF_OBJECT_TYPE Function(FPDF_STRUCTELEMENT_ATTR_VALUE)>()
+external int FPDF_StructElement_Attr_GetType(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetBooleanValue
+/// Get the value of a boolean attribute in an attribute map as
+/// FPDF_BOOL. FPDF_StructElement_Attr_GetType() should have returned
+/// FPDF_OBJECT_BOOLEAN for this property.
+/// Parameters:
+/// value     - Handle to the value.
+/// out_value - A pointer to variable that will receive the value. Not
+/// filled if false is returned.
+/// Return value:
+/// Returns TRUE if the attribute maps to a boolean value, FALSE
+/// otherwise.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_STRUCTELEMENT_ATTR_VALUE, ffi.Pointer<FPDF_BOOL>)
+>()
+external int FPDF_StructElement_Attr_GetBooleanValue(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+  ffi.Pointer<FPDF_BOOL> out_value,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetNumberValue
+/// Get the value of a number attribute in an attribute map as float.
+/// FPDF_StructElement_Attr_GetType() should have returned
+/// FPDF_OBJECT_NUMBER for this property.
+/// Parameters:
+/// value     - Handle to the value.
+/// out_value - A pointer to variable that will receive the value. Not
+/// filled if false is returned.
+/// Return value:
+/// Returns TRUE if the attribute maps to a number value, FALSE
+/// otherwise.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_STRUCTELEMENT_ATTR_VALUE, ffi.Pointer<ffi.Float>)
+>()
+external int FPDF_StructElement_Attr_GetNumberValue(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+  ffi.Pointer<ffi.Float> out_value,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetStringValue
+/// Get the value of a string attribute in an attribute map as string.
+/// FPDF_StructElement_Attr_GetType() should have returned
+/// FPDF_OBJECT_STRING or FPDF_OBJECT_NAME for this property.
+/// Parameters:
+/// value      - Handle to the value.
+/// buffer     - A buffer for holding the returned key in UTF-16LE.
+/// This is only modified if |buflen| is longer than the
+/// length of the key. Optional, pass null to just
+/// retrieve the size of the buffer needed.
+/// buflen     - The length of the buffer.
+/// out_buflen - A pointer to variable that will receive the minimum
+/// buffer size to contain the key. Not filled if FALSE is
+/// returned.
+/// Return value:
+/// Returns TRUE if the attribute maps to a string value, FALSE
+/// otherwise.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_STRUCTELEMENT_ATTR_VALUE,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+    ffi.Pointer<ffi.UnsignedLong>,
+  )
+>()
+external int FPDF_StructElement_Attr_GetStringValue(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+  ffi.Pointer<ffi.UnsignedLong> out_buflen,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetBlobValue
+/// Get the value of a blob attribute in an attribute map as string.
+/// Parameters:
+/// value      - Handle to the value.
+/// buffer     - A buffer for holding the returned value. This is only
+/// modified if |buflen| is at least as long as the length
+/// of the value. Optional, pass null to just retrieve the
+/// size of the buffer needed.
+/// buflen     - The length of the buffer.
+/// out_buflen - A pointer to variable that will receive the minimum
+/// buffer size to contain the key. Not filled if FALSE is
+/// returned.
+/// Return value:
+/// Returns TRUE if the attribute maps to a string value, FALSE
+/// otherwise.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_STRUCTELEMENT_ATTR_VALUE,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+    ffi.Pointer<ffi.UnsignedLong>,
+  )
+>()
+external int FPDF_StructElement_Attr_GetBlobValue(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+  ffi.Pointer<ffi.UnsignedLong> out_buflen,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_CountChildren
+/// Count the number of children values in an attribute.
+/// Parameters:
+/// value - Handle to the value.
+/// Return value:
+/// The number of children, or -1 on error.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT_ATTR_VALUE)>()
+external int FPDF_StructElement_Attr_CountChildren(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_Attr_GetChildAtIndex
+/// Get a child from an attribute.
+/// Parameters:
+/// value - Handle to the value.
+/// index - The index for the child, 0-based.
+/// Return value:
+/// The child at the n-th index or NULL on error.
+/// Comments:
+/// The |index| must be less than the
+/// FPDF_StructElement_Attr_CountChildren() return value.
+@ffi.Native<
+  FPDF_STRUCTELEMENT_ATTR_VALUE Function(FPDF_STRUCTELEMENT_ATTR_VALUE, ffi.Int)
+>()
+external FPDF_STRUCTELEMENT_ATTR_VALUE FPDF_StructElement_Attr_GetChildAtIndex(
+  FPDF_STRUCTELEMENT_ATTR_VALUE value,
+  int index,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetMarkedContentIdCount
+/// Get the count of marked content ids for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// Return value:
+/// The count of marked content ids or -1 if none exists.
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
+external int FPDF_StructElement_GetMarkedContentIdCount(
+  FPDF_STRUCTELEMENT struct_element,
+);
+
+/// Experimental API.
+/// Function: FPDF_StructElement_GetMarkedContentIdAtIndex
+/// Get the marked content id at a given index for a given element.
+/// Parameters:
+/// struct_element -   Handle to the struct element.
+/// index          -   The index of the marked content id, 0-based.
+/// Return value:
+/// The marked content ID of the element. If no ID exists, returns
+/// -1.
+/// Comments:
+/// The |index| must be less than the
+/// FPDF_StructElement_GetMarkedContentIdCount() return value.
+/// This will likely supersede FPDF_StructElement_GetMarkedContentID().
+@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT, ffi.Int)>()
+external int FPDF_StructElement_GetMarkedContentIdAtIndex(
+  FPDF_STRUCTELEMENT struct_element,
+  int index,
+);
 
 /// Setup an unsupported object handler.
 ///
@@ -5095,6 +6643,519 @@ external void FSDK_SetLocaltimeFunction(
 /// The page mode defines how the document should be initially displayed.
 @ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
 external int FPDFDoc_GetPageMode(FPDF_DOCUMENT document);
+
+/// Experimental API.
+/// Function: FPDF_RenderPageBitmapWithColorScheme_Start
+/// Start to render page contents to a device independent bitmap
+/// progressively with a specified color scheme for the content.
+/// Parameters:
+/// bitmap       -   Handle to the device independent bitmap (as the
+/// output buffer). Bitmap handle can be created by
+/// FPDFBitmap_Create function.
+/// page         -   Handle to the page as returned by FPDF_LoadPage
+/// function.
+/// start_x      -   Left pixel position of the display area in the
+/// bitmap coordinate.
+/// start_y      -   Top pixel position of the display area in the
+/// bitmap coordinate.
+/// size_x       -   Horizontal size (in pixels) for displaying the
+/// page.
+/// size_y       -   Vertical size (in pixels) for displaying the page.
+/// rotate       -   Page orientation: 0 (normal), 1 (rotated 90
+/// degrees clockwise), 2 (rotated 180 degrees),
+/// 3 (rotated 90 degrees counter-clockwise).
+/// flags        -   0 for normal display, or combination of flags
+/// defined in fpdfview.h. With FPDF_ANNOT flag, it
+/// renders all annotations that does not require
+/// user-interaction, which are all annotations except
+/// widget and popup annotations.
+/// color_scheme -   Color scheme to be used in rendering the |page|.
+/// If null, this function will work similar to
+/// FPDF_RenderPageBitmap_Start().
+/// pause        -   The IFSDK_PAUSE interface. A callback mechanism
+/// allowing the page rendering process.
+/// Return value:
+/// Rendering Status. See flags for progressive process status for the
+/// details.
+@ffi.Native<
+  ffi.Int Function(
+    FPDF_BITMAP,
+    FPDF_PAGE,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<FPDF_COLORSCHEME>,
+    ffi.Pointer<IFSDK_PAUSE>,
+  )
+>()
+external int FPDF_RenderPageBitmapWithColorScheme_Start(
+  FPDF_BITMAP bitmap,
+  FPDF_PAGE page,
+  int start_x,
+  int start_y,
+  int size_x,
+  int size_y,
+  int rotate,
+  int flags,
+  ffi.Pointer<FPDF_COLORSCHEME> color_scheme,
+  ffi.Pointer<IFSDK_PAUSE> pause,
+);
+
+/// Function: FPDF_RenderPageBitmap_Start
+/// Start to render page contents to a device independent bitmap
+/// progressively.
+/// Parameters:
+/// bitmap      -   Handle to the device independent bitmap (as the
+/// output buffer). Bitmap handle can be created by
+/// FPDFBitmap_Create().
+/// page        -   Handle to the page, as returned by FPDF_LoadPage().
+/// start_x     -   Left pixel position of the display area in the
+/// bitmap coordinates.
+/// start_y     -   Top pixel position of the display area in the bitmap
+/// coordinates.
+/// size_x      -   Horizontal size (in pixels) for displaying the page.
+/// size_y      -   Vertical size (in pixels) for displaying the page.
+/// rotate      -   Page orientation: 0 (normal), 1 (rotated 90 degrees
+/// clockwise), 2 (rotated 180 degrees), 3 (rotated 90
+/// degrees counter-clockwise).
+/// flags       -   0 for normal display, or combination of flags
+/// defined in fpdfview.h. With FPDF_ANNOT flag, it
+/// renders all annotations that does not require
+/// user-interaction, which are all annotations except
+/// widget and popup annotations.
+/// pause       -   The IFSDK_PAUSE interface.A callback mechanism
+/// allowing the page rendering process
+/// Return value:
+/// Rendering Status. See flags for progressive process status for the
+/// details.
+@ffi.Native<
+  ffi.Int Function(
+    FPDF_BITMAP,
+    FPDF_PAGE,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<IFSDK_PAUSE>,
+  )
+>()
+external int FPDF_RenderPageBitmap_Start(
+  FPDF_BITMAP bitmap,
+  FPDF_PAGE page,
+  int start_x,
+  int start_y,
+  int size_x,
+  int size_y,
+  int rotate,
+  int flags,
+  ffi.Pointer<IFSDK_PAUSE> pause,
+);
+
+/// Function: FPDF_RenderPage_Continue
+/// Continue rendering a PDF page.
+/// Parameters:
+/// page        -   Handle to the page, as returned by FPDF_LoadPage().
+/// pause       -   The IFSDK_PAUSE interface (a callback mechanism
+/// allowing the page rendering process to be paused
+/// before it's finished). This can be NULL if you
+/// don't want to pause.
+/// Return value:
+/// The rendering status. See flags for progressive process status for
+/// the details.
+@ffi.Native<ffi.Int Function(FPDF_PAGE, ffi.Pointer<IFSDK_PAUSE>)>()
+external int FPDF_RenderPage_Continue(
+  FPDF_PAGE page,
+  ffi.Pointer<IFSDK_PAUSE> pause,
+);
+
+/// Function: FPDF_RenderPage_Close
+/// Release the resource allocate during page rendering. Need to be
+/// called after finishing rendering or
+/// cancel the rendering.
+/// Parameters:
+/// page        -   Handle to the page, as returned by FPDF_LoadPage().
+/// Return value:
+/// None.
+@ffi.Native<ffi.Void Function(FPDF_PAGE)>()
+external void FPDF_RenderPage_Close(FPDF_PAGE page);
+
+/// Experimental API.
+/// Get the number of embedded files in |document|.
+///
+/// document - handle to a document.
+///
+/// Returns the number of embedded files in |document|.
+@ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
+external int FPDFDoc_GetAttachmentCount(FPDF_DOCUMENT document);
+
+/// Experimental API.
+/// Add an embedded file with |name| in |document|. If |name| is empty, or if
+/// |name| is the name of a existing embedded file in |document|, or if
+/// |document|'s embedded file name tree is too deep (i.e. |document| has too
+/// many embedded files already), then a new attachment will not be added.
+///
+/// document - handle to a document.
+/// name     - name of the new attachment.
+///
+/// Returns a handle to the new attachment object, or NULL on failure.
+@ffi.Native<FPDF_ATTACHMENT Function(FPDF_DOCUMENT, FPDF_WIDESTRING)>()
+external FPDF_ATTACHMENT FPDFDoc_AddAttachment(
+  FPDF_DOCUMENT document,
+  FPDF_WIDESTRING name,
+);
+
+/// Experimental API.
+/// Get the embedded attachment at |index| in |document|. Note that the returned
+/// attachment handle is only valid while |document| is open.
+///
+/// document - handle to a document.
+/// index    - the index of the requested embedded file.
+///
+/// Returns the handle to the attachment object, or NULL on failure.
+@ffi.Native<FPDF_ATTACHMENT Function(FPDF_DOCUMENT, ffi.Int)>()
+external FPDF_ATTACHMENT FPDFDoc_GetAttachment(
+  FPDF_DOCUMENT document,
+  int index,
+);
+
+/// Experimental API.
+/// Delete the embedded attachment at |index| in |document|. Note that this does
+/// not remove the attachment data from the PDF file; it simply removes the
+/// file's entry in the embedded files name tree so that it does not appear in
+/// the attachment list. This behavior may change in the future.
+///
+/// document - handle to a document.
+/// index    - the index of the embedded file to be deleted.
+///
+/// Returns true if successful.
+@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT, ffi.Int)>()
+external int FPDFDoc_DeleteAttachment(FPDF_DOCUMENT document, int index);
+
+/// Experimental API.
+/// Get the name of the |attachment| file. |buffer| is only modified if |buflen|
+/// is longer than the length of the file name. On errors, |buffer| is unmodified
+/// and the returned length is 0.
+///
+/// attachment - handle to an attachment.
+/// buffer     - buffer for holding the file name, encoded in UTF-16LE.
+/// buflen     - length of the buffer in bytes.
+///
+/// Returns the length of the file name in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_ATTACHMENT,
+    ffi.Pointer<FPDF_WCHAR>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFAttachment_GetName(
+  FPDF_ATTACHMENT attachment,
+  ffi.Pointer<FPDF_WCHAR> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Check if the params dictionary of |attachment| has |key| as a key.
+///
+/// attachment - handle to an attachment.
+/// key        - the key to look for, encoded in UTF-8.
+///
+/// Returns true if |key| exists.
+@ffi.Native<FPDF_BOOL Function(FPDF_ATTACHMENT, FPDF_BYTESTRING)>()
+external int FPDFAttachment_HasKey(
+  FPDF_ATTACHMENT attachment,
+  FPDF_BYTESTRING key,
+);
+
+/// Experimental API.
+/// Get the type of the value corresponding to |key| in the params dictionary of
+/// the embedded |attachment|.
+///
+/// attachment - handle to an attachment.
+/// key        - the key to look for, encoded in UTF-8.
+///
+/// Returns the type of the dictionary value.
+@ffi.Native<FPDF_OBJECT_TYPE Function(FPDF_ATTACHMENT, FPDF_BYTESTRING)>()
+external int FPDFAttachment_GetValueType(
+  FPDF_ATTACHMENT attachment,
+  FPDF_BYTESTRING key,
+);
+
+/// Experimental API.
+/// Set the string value corresponding to |key| in the params dictionary of the
+/// embedded file |attachment|, overwriting the existing value if any. The value
+/// type should be FPDF_OBJECT_STRING after this function call succeeds.
+///
+/// attachment - handle to an attachment.
+/// key        - the key to the dictionary entry, encoded in UTF-8.
+/// value      - the string value to be set, encoded in UTF-16LE.
+///
+/// Returns true if successful.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_ATTACHMENT, FPDF_BYTESTRING, FPDF_WIDESTRING)
+>()
+external int FPDFAttachment_SetStringValue(
+  FPDF_ATTACHMENT attachment,
+  FPDF_BYTESTRING key,
+  FPDF_WIDESTRING value,
+);
+
+/// Experimental API.
+/// Get the string value corresponding to |key| in the params dictionary of the
+/// embedded file |attachment|. |buffer| is only modified if |buflen| is longer
+/// than the length of the string value. Note that if |key| does not exist in the
+/// dictionary or if |key|'s corresponding value in the dictionary is not a
+/// string (i.e. the value is not of type FPDF_OBJECT_STRING or
+/// FPDF_OBJECT_NAME), then an empty string would be copied to |buffer| and the
+/// return value would be 2. On other errors, nothing would be added to |buffer|
+/// and the return value would be 0.
+///
+/// attachment - handle to an attachment.
+/// key        - the key to the requested string value, encoded in UTF-8.
+/// buffer     - buffer for holding the string value encoded in UTF-16LE.
+/// buflen     - length of the buffer in bytes.
+///
+/// Returns the length of the dictionary value string in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_ATTACHMENT,
+    FPDF_BYTESTRING,
+    ffi.Pointer<FPDF_WCHAR>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFAttachment_GetStringValue(
+  FPDF_ATTACHMENT attachment,
+  FPDF_BYTESTRING key,
+  ffi.Pointer<FPDF_WCHAR> buffer,
+  int buflen,
+);
+
+/// Experimental API.
+/// Set the file data of |attachment|, overwriting the existing file data if any.
+/// The creation date and checksum will be updated, while all other dictionary
+/// entries will be deleted. Note that only contents with |len| smaller than
+/// INT_MAX is supported.
+///
+/// attachment - handle to an attachment.
+/// contents   - buffer holding the file data to write to |attachment|.
+/// len        - length of file data in bytes.
+///
+/// Returns true if successful.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_ATTACHMENT,
+    FPDF_DOCUMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFAttachment_SetFile(
+  FPDF_ATTACHMENT attachment,
+  FPDF_DOCUMENT document,
+  ffi.Pointer<ffi.Void> contents,
+  int len,
+);
+
+/// Experimental API.
+/// Get the file data of |attachment|.
+/// When the attachment file data is readable, true is returned, and |out_buflen|
+/// is updated to indicate the file data size. |buffer| is only modified if
+/// |buflen| is non-null and long enough to contain the entire file data. Callers
+/// must check both the return value and the input |buflen| is no less than the
+/// returned |out_buflen| before using the data.
+///
+/// Otherwise, when the attachment file data is unreadable or when |out_buflen|
+/// is null, false is returned and |buffer| and |out_buflen| remain unmodified.
+///
+/// attachment - handle to an attachment.
+/// buffer     - buffer for holding the file data from |attachment|.
+/// buflen     - length of the buffer in bytes.
+/// out_buflen - pointer to the variable that will receive the minimum buffer
+/// size to contain the file data of |attachment|.
+///
+/// Returns true on success, false otherwise.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_ATTACHMENT,
+    ffi.Pointer<ffi.Void>,
+    ffi.UnsignedLong,
+    ffi.Pointer<ffi.UnsignedLong>,
+  )
+>()
+external int FPDFAttachment_GetFile(
+  FPDF_ATTACHMENT attachment,
+  ffi.Pointer<ffi.Void> buffer,
+  int buflen,
+  ffi.Pointer<ffi.UnsignedLong> out_buflen,
+);
+
+/// Experimental API.
+/// Get the MIME type (Subtype) of the embedded file |attachment|. |buffer| is
+/// only modified if |buflen| is longer than the length of the MIME type string.
+/// If the Subtype is not found or if there is no file stream, an empty string
+/// would be copied to |buffer| and the return value would be 2. On other errors,
+/// nothing would be added to |buffer| and the return value would be 0.
+///
+/// attachment - handle to an attachment.
+/// buffer     - buffer for holding the MIME type string encoded in UTF-16LE.
+/// buflen     - length of the buffer in bytes.
+///
+/// Returns the length of the MIME type string in bytes.
+@ffi.Native<
+  ffi.UnsignedLong Function(
+    FPDF_ATTACHMENT,
+    ffi.Pointer<FPDF_WCHAR>,
+    ffi.UnsignedLong,
+  )
+>()
+external int FPDFAttachment_GetSubtype(
+  FPDF_ATTACHMENT attachment,
+  ffi.Pointer<FPDF_WCHAR> buffer,
+  int buflen,
+);
+
+/// Flatten annotations and form fields into the page contents.
+///
+/// page  - handle to the page.
+/// nFlag - One of the |FLAT_*| values denoting the page usage.
+///
+/// Returns one of the |FLATTEN_*| values.
+///
+/// Currently, all failures return |FLATTEN_FAIL| with no indication of the
+/// cause.
+@ffi.Native<ffi.Int Function(FPDF_PAGE, ffi.Int)>()
+external int FPDFPage_Flatten(FPDF_PAGE page, int nFlag);
+
+/// Experimental API.
+/// Import pages to a FPDF_DOCUMENT.
+///
+/// dest_doc     - The destination document for the pages.
+/// src_doc      - The document to be imported.
+/// page_indices - An array of page indices to be imported. The first page is
+/// zero. If |page_indices| is NULL, all pages from |src_doc|
+/// are imported.
+/// length       - The length of the |page_indices| array.
+/// index        - The page index at which to insert the first imported page
+/// into |dest_doc|. The first page is zero.
+///
+/// Returns TRUE on success. Returns FALSE if any pages in |page_indices| is
+/// invalid.
+@ffi.Native<
+  FPDF_BOOL Function(
+    FPDF_DOCUMENT,
+    FPDF_DOCUMENT,
+    ffi.Pointer<ffi.Int>,
+    ffi.UnsignedLong,
+    ffi.Int,
+  )
+>()
+external int FPDF_ImportPagesByIndex(
+  FPDF_DOCUMENT dest_doc,
+  FPDF_DOCUMENT src_doc,
+  ffi.Pointer<ffi.Int> page_indices,
+  int length,
+  int index,
+);
+
+/// Import pages to a FPDF_DOCUMENT.
+///
+/// dest_doc  - The destination document for the pages.
+/// src_doc   - The document to be imported.
+/// pagerange - A page range string, Such as "1,3,5-7". The first page is one.
+/// If |pagerange| is NULL, all pages from |src_doc| are imported.
+/// index     - The page index at which to insert the first imported page into
+/// |dest_doc|. The first page is zero.
+///
+/// Returns TRUE on success. Returns FALSE if any pages in |pagerange| is
+/// invalid or if |pagerange| cannot be read.
+@ffi.Native<
+  FPDF_BOOL Function(FPDF_DOCUMENT, FPDF_DOCUMENT, FPDF_BYTESTRING, ffi.Int)
+>()
+external int FPDF_ImportPages(
+  FPDF_DOCUMENT dest_doc,
+  FPDF_DOCUMENT src_doc,
+  FPDF_BYTESTRING pagerange,
+  int index,
+);
+
+/// Experimental API.
+/// Create a new document from |src_doc|.  The pages of |src_doc| will be
+/// combined to provide |num_pages_on_x_axis x num_pages_on_y_axis| pages per
+/// |output_doc| page.
+///
+/// src_doc             - The document to be imported.
+/// output_width        - The output page width in PDF "user space" units.
+/// output_height       - The output page height in PDF "user space" units.
+/// num_pages_on_x_axis - The number of pages on X Axis.
+/// num_pages_on_y_axis - The number of pages on Y Axis.
+///
+/// Return value:
+/// A handle to the created document, or NULL on failure.
+///
+/// Comments:
+/// number of pages per page = num_pages_on_x_axis * num_pages_on_y_axis
+@ffi.Native<
+  FPDF_DOCUMENT Function(
+    FPDF_DOCUMENT,
+    ffi.Float,
+    ffi.Float,
+    ffi.Size,
+    ffi.Size,
+  )
+>()
+external FPDF_DOCUMENT FPDF_ImportNPagesToOne(
+  FPDF_DOCUMENT src_doc,
+  double output_width,
+  double output_height,
+  int num_pages_on_x_axis,
+  int num_pages_on_y_axis,
+);
+
+/// Experimental API.
+/// Create a template to generate form xobjects from |src_doc|'s page at
+/// |src_page_index|, for use in |dest_doc|.
+///
+/// Returns a handle on success, or NULL on failure. Caller owns the newly
+/// created object. The returned handle's lifetime is tied to |dest_doc| and not
+/// |src_doc|. It must be closed before |dest_doc|.
+@ffi.Native<FPDF_XOBJECT Function(FPDF_DOCUMENT, FPDF_DOCUMENT, ffi.Int)>()
+external FPDF_XOBJECT FPDF_NewXObjectFromPage(
+  FPDF_DOCUMENT dest_doc,
+  FPDF_DOCUMENT src_doc,
+  int src_page_index,
+);
+
+/// Experimental API.
+/// Close an FPDF_XOBJECT handle created by FPDF_NewXObjectFromPage().
+/// FPDF_PAGEOBJECTs created from the FPDF_XOBJECT handle are not affected.
+@ffi.Native<ffi.Void Function(FPDF_XOBJECT)>()
+external void FPDF_CloseXObject(FPDF_XOBJECT xobject);
+
+/// Experimental API.
+/// Create a new form object from an FPDF_XOBJECT object.
+///
+/// Returns a new form object on success, or NULL on failure. Caller owns the
+/// newly created object.
+@ffi.Native<FPDF_PAGEOBJECT Function(FPDF_XOBJECT)>()
+external FPDF_PAGEOBJECT FPDF_NewFormObjectFromXObject(FPDF_XOBJECT xobject);
+
+/// Copy the viewer preferences from |src_doc| into |dest_doc|.
+///
+/// dest_doc - Document to write the viewer preferences into.
+/// src_doc  - Document to read the viewer preferences from.
+///
+/// Returns TRUE on success.
+@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT, FPDF_DOCUMENT)>()
+external int FPDF_CopyViewerPreferences(
+  FPDF_DOCUMENT dest_doc,
+  FPDF_DOCUMENT src_doc,
+);
 
 /// Create a new PDF document.
 ///
@@ -7249,2074 +9310,9 @@ external int FPDFFormObj_RemoveObject(
   FPDF_PAGEOBJECT page_object,
 );
 
-/// Experimental API.
-/// Gets the decoded data from the thumbnail of |page| if it exists.
-/// This only modifies |buffer| if |buflen| less than or equal to the
-/// size of the decoded data. Returns the size of the decoded
-/// data or 0 if thumbnail DNE. Optional, pass null to just retrieve
-/// the size of the buffer needed.
-///
-/// page    - handle to a page.
-/// buffer  - buffer for holding the decoded image data.
-/// buflen  - length of the buffer in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(FPDF_PAGE, ffi.Pointer<ffi.Void>, ffi.UnsignedLong)
->()
-external int FPDFPage_GetDecodedThumbnailData(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Gets the raw data from the thumbnail of |page| if it exists.
-/// This only modifies |buffer| if |buflen| is less than or equal to
-/// the size of the raw data. Returns the size of the raw data or 0
-/// if thumbnail DNE. Optional, pass null to just retrieve the size
-/// of the buffer needed.
-///
-/// page    - handle to a page.
-/// buffer  - buffer for holding the raw image data.
-/// buflen  - length of the buffer in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(FPDF_PAGE, ffi.Pointer<ffi.Void>, ffi.UnsignedLong)
->()
-external int FPDFPage_GetRawThumbnailData(
-  FPDF_PAGE page,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Returns the thumbnail of |page| as a FPDF_BITMAP. Returns a nullptr
-/// if unable to access the thumbnail's stream.
-///
-/// page - handle to a page.
-@ffi.Native<FPDF_BITMAP Function(FPDF_PAGE)>()
-external FPDF_BITMAP FPDFPage_GetThumbnailAsBitmap(FPDF_PAGE page);
-
-/// Function: FPDF_SaveAsCopy
-/// Saves the copy of specified document in custom way.
-/// Parameters:
-/// document        -   Handle to document, as returned by
-/// FPDF_LoadDocument() or FPDF_CreateNewDocument().
-/// file_write      -   A pointer to a custom file write structure.
-/// flags           -   Flags above that affect how the PDF gets saved.
-/// Pass in 0 when there are no flags.
-/// Return value:
-/// TRUE for succeed, FALSE for failed.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_DOCUMENT, ffi.Pointer<FPDF_FILEWRITE>, FPDF_DWORD)
->()
-external int FPDF_SaveAsCopy(
-  FPDF_DOCUMENT document,
-  ffi.Pointer<FPDF_FILEWRITE> file_write,
-  int flags,
-);
-
-/// Function: FPDF_SaveWithVersion
-/// Same as FPDF_SaveAsCopy(), except the file version of the
-/// saved document can be specified by the caller.
-/// Parameters:
-/// document        -   Handle to document.
-/// file_write      -   A pointer to a custom file write structure.
-/// flags           -   The creating flags.
-/// file_version    -   The PDF file version. File version: 14 for 1.4,
-/// 15 for 1.5, ...
-/// Return value:
-/// TRUE if succeed, FALSE if failed.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_DOCUMENT,
-    ffi.Pointer<FPDF_FILEWRITE>,
-    FPDF_DWORD,
-    ffi.Int,
-  )
->()
-external int FPDF_SaveWithVersion(
-  FPDF_DOCUMENT document,
-  ffi.Pointer<FPDF_FILEWRITE> file_write,
-  int flags,
-  int file_version,
-);
-
-/// Function: FPDFText_LoadPage
-/// Prepare information about all characters in a page.
-/// Parameters:
-/// page    -   Handle to the page. Returned by FPDF_LoadPage function
-/// (in FPDFVIEW module).
-/// Return value:
-/// A handle to the text page information structure.
-/// NULL if something goes wrong.
-/// Comments:
-/// Application must call FPDFText_ClosePage to release the text page
-/// information.
-@ffi.Native<FPDF_TEXTPAGE Function(FPDF_PAGE)>()
-external FPDF_TEXTPAGE FPDFText_LoadPage(FPDF_PAGE page);
-
-/// Function: FPDFText_ClosePage
-/// Release all resources allocated for a text page information
-/// structure.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// Return Value:
-/// None.
-@ffi.Native<ffi.Void Function(FPDF_TEXTPAGE)>()
-external void FPDFText_ClosePage(FPDF_TEXTPAGE text_page);
-
-/// Function: FPDFText_CountChars
-/// Get number of characters in a page.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// Return value:
-/// Number of characters in the page. Return -1 for error.
-/// Generated characters, like additional space characters, new line
-/// characters, are also counted.
-/// Comments:
-/// Characters in a page form a "stream", inside the stream, each
-/// character has an index.
-/// We will use the index parameters in many of FPDFTEXT functions. The
-/// first character in the page
-/// has an index value of zero.
-@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE)>()
-external int FPDFText_CountChars(FPDF_TEXTPAGE text_page);
-
-/// Function: FPDFText_GetUnicode
-/// Get Unicode of a character in a page.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// The Unicode of the particular character.
-/// If a character is not encoded in Unicode and Foxit engine can't
-/// convert to Unicode,
-/// the return value will be zero.
-@ffi.Native<ffi.UnsignedInt Function(FPDF_TEXTPAGE, ffi.Int)>()
-external int FPDFText_GetUnicode(FPDF_TEXTPAGE text_page, int index);
-
-/// Experimental API.
-/// Function: FPDFText_GetTextObject
-/// Get the FPDF_PAGEOBJECT associated with a given character.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// The associated text object for the character at |index|, or NULL on
-/// error. The returned text object, if non-null, is of type
-/// |FPDF_PAGEOBJ_TEXT|. The caller does not own the returned object.
-@ffi.Native<FPDF_PAGEOBJECT Function(FPDF_TEXTPAGE, ffi.Int)>()
-external FPDF_PAGEOBJECT FPDFText_GetTextObject(
-  FPDF_TEXTPAGE text_page,
-  int index,
-);
-
-/// Experimental API.
-/// Function: FPDFText_IsGenerated
-/// Get if a character in a page is generated by PDFium.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// 1 if the character is generated by PDFium.
-/// 0 if the character is not generated by PDFium.
-/// -1 if there was an error.
-@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
-external int FPDFText_IsGenerated(FPDF_TEXTPAGE text_page, int index);
-
-/// Experimental API.
-/// Function: FPDFText_IsHyphen
-/// Get if a character in a page is a hyphen.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// 1 if the character is a hyphen.
-/// 0 if the character is not a hyphen.
-/// -1 if there was an error.
-@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
-external int FPDFText_IsHyphen(FPDF_TEXTPAGE text_page, int index);
-
-/// Experimental API.
-/// Function: FPDFText_HasUnicodeMapError
-/// Get if a character in a page has an invalid unicode mapping.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// 1 if the character has an invalid unicode mapping.
-/// 0 if the character has no known unicode mapping issues.
-/// -1 if there was an error.
-@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
-external int FPDFText_HasUnicodeMapError(FPDF_TEXTPAGE text_page, int index);
-
-/// Function: FPDFText_GetFontSize
-/// Get the font size of a particular character.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// The font size of the particular character, measured in points (about
-/// 1/72 inch). This is the typographic size of the font (so called
-/// "em size").
-@ffi.Native<ffi.Double Function(FPDF_TEXTPAGE, ffi.Int)>()
-external double FPDFText_GetFontSize(FPDF_TEXTPAGE text_page, int index);
-
-/// Experimental API.
-/// Function: FPDFText_GetFontInfo
-/// Get the font name and flags of a particular character.
-/// Parameters:
-/// text_page - Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index     - Zero-based index of the character.
-/// buffer    - A buffer receiving the font name.
-/// buflen    - The length of |buffer| in bytes.
-/// flags     - Optional pointer to an int receiving the font flags.
-/// These flags should be interpreted per PDF spec 1.7
-/// Section 5.7.1 Font Descriptor Flags.
-/// Return value:
-/// On success, return the length of the font name, including the
-/// trailing NUL character, in bytes. If this length is less than or
-/// equal to |length|, |buffer| is set to the font name, |flags| is
-/// set to the font flags. |buffer| is in UTF-8 encoding. Return 0 on
-/// failure.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-    ffi.Pointer<ffi.Int>,
-  )
->()
-external int FPDFText_GetFontInfo(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-  ffi.Pointer<ffi.Int> flags,
-);
-
-/// Experimental API.
-/// Function: FPDFText_GetFontWeight
-/// Get the font weight of a particular character.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return value:
-/// On success, return the font weight of the particular character. If
-/// |text_page| is invalid, if |index| is out of bounds, or if the
-/// character's text object is undefined, return -1.
-@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int)>()
-external int FPDFText_GetFontWeight(FPDF_TEXTPAGE text_page, int index);
-
-/// Experimental API.
-/// Function: FPDFText_GetFillColor
-/// Get the fill color of a particular character.
-/// Parameters:
-/// text_page      -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index          -   Zero-based index of the character.
-/// R              -   Pointer to an unsigned int number receiving the
-/// red value of the fill color.
-/// G              -   Pointer to an unsigned int number receiving the
-/// green value of the fill color.
-/// B              -   Pointer to an unsigned int number receiving the
-/// blue value of the fill color.
-/// A              -   Pointer to an unsigned int number receiving the
-/// alpha value of the fill color.
-/// Return value:
-/// Whether the call succeeded. If false, |R|, |G|, |B| and |A| are
-/// unchanged.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Pointer<ffi.UnsignedInt>,
-    ffi.Pointer<ffi.UnsignedInt>,
-    ffi.Pointer<ffi.UnsignedInt>,
-    ffi.Pointer<ffi.UnsignedInt>,
-  )
->()
-external int FPDFText_GetFillColor(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<ffi.UnsignedInt> R,
-  ffi.Pointer<ffi.UnsignedInt> G,
-  ffi.Pointer<ffi.UnsignedInt> B,
-  ffi.Pointer<ffi.UnsignedInt> A,
-);
-
-/// Experimental API.
-/// Function: FPDFText_GetStrokeColor
-/// Get the stroke color of a particular character.
-/// Parameters:
-/// text_page      -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index          -   Zero-based index of the character.
-/// R              -   Pointer to an unsigned int number receiving the
-/// red value of the stroke color.
-/// G              -   Pointer to an unsigned int number receiving the
-/// green value of the stroke color.
-/// B              -   Pointer to an unsigned int number receiving the
-/// blue value of the stroke color.
-/// A              -   Pointer to an unsigned int number receiving the
-/// alpha value of the stroke color.
-/// Return value:
-/// Whether the call succeeded. If false, |R|, |G|, |B| and |A| are
-/// unchanged.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Pointer<ffi.UnsignedInt>,
-    ffi.Pointer<ffi.UnsignedInt>,
-    ffi.Pointer<ffi.UnsignedInt>,
-    ffi.Pointer<ffi.UnsignedInt>,
-  )
->()
-external int FPDFText_GetStrokeColor(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<ffi.UnsignedInt> R,
-  ffi.Pointer<ffi.UnsignedInt> G,
-  ffi.Pointer<ffi.UnsignedInt> B,
-  ffi.Pointer<ffi.UnsignedInt> A,
-);
-
-/// Experimental API.
-/// Function: FPDFText_GetCharAngle
-/// Get character rotation angle.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// Return Value:
-/// On success, return the angle value in radian. Value will always be
-/// greater or equal to 0. If |text_page| is invalid, or if |index| is
-/// out of bounds, then return -1.
-@ffi.Native<ffi.Float Function(FPDF_TEXTPAGE, ffi.Int)>()
-external double FPDFText_GetCharAngle(FPDF_TEXTPAGE text_page, int index);
-
-/// Function: FPDFText_GetCharBox
-/// Get bounding box of a particular character.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// left        -   Pointer to a double number receiving left position
-/// of the character box.
-/// right       -   Pointer to a double number receiving right position
-/// of the character box.
-/// bottom      -   Pointer to a double number receiving bottom position
-/// of the character box.
-/// top         -   Pointer to a double number receiving top position of
-/// the character box.
-/// Return Value:
-/// On success, return TRUE and fill in |left|, |right|, |bottom|, and
-/// |top|. If |text_page| is invalid, or if |index| is out of bounds,
-/// then return FALSE, and the out parameters remain unmodified.
-/// Comments:
-/// All positions are measured in PDF "user space".
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-  )
->()
-external int FPDFText_GetCharBox(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<ffi.Double> left,
-  ffi.Pointer<ffi.Double> right,
-  ffi.Pointer<ffi.Double> bottom,
-  ffi.Pointer<ffi.Double> top,
-);
-
-/// Experimental API.
-/// Function: FPDFText_GetLooseCharBox
-/// Get a "loose" bounding box of a particular character, i.e., covering
-/// the entire glyph bounds, without taking the actual glyph shape into
-/// account.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// rect        -   Pointer to a FS_RECTF receiving the character box.
-/// Return Value:
-/// On success, return TRUE and fill in |rect|. If |text_page| is
-/// invalid, or if |index| is out of bounds, then return FALSE, and the
-/// |rect| out parameter remains unmodified.
-/// Comments:
-/// All positions are measured in PDF "user space".
-@ffi.Native<FPDF_BOOL Function(FPDF_TEXTPAGE, ffi.Int, ffi.Pointer<FS_RECTF>)>()
-external int FPDFText_GetLooseCharBox(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<FS_RECTF> rect,
-);
-
-/// Experimental API.
-/// Function: FPDFText_GetMatrix
-/// Get the effective transformation matrix for a particular character.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage().
-/// index       -   Zero-based index of the character.
-/// matrix      -   Pointer to a FS_MATRIX receiving the transformation
-/// matrix.
-/// Return Value:
-/// On success, return TRUE and fill in |matrix|. If |text_page| is
-/// invalid, or if |index| is out of bounds, or if |matrix| is NULL,
-/// then return FALSE, and |matrix| remains unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_TEXTPAGE, ffi.Int, ffi.Pointer<FS_MATRIX>)
->()
-external int FPDFText_GetMatrix(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<FS_MATRIX> matrix,
-);
-
-/// Function: FPDFText_GetCharOrigin
-/// Get origin of a particular character.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// index       -   Zero-based index of the character.
-/// x           -   Pointer to a double number receiving x coordinate of
-/// the character origin.
-/// y           -   Pointer to a double number receiving y coordinate of
-/// the character origin.
-/// Return Value:
-/// Whether the call succeeded. If false, x and y are unchanged.
-/// Comments:
-/// All positions are measured in PDF "user space".
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-  )
->()
-external int FPDFText_GetCharOrigin(
-  FPDF_TEXTPAGE text_page,
-  int index,
-  ffi.Pointer<ffi.Double> x,
-  ffi.Pointer<ffi.Double> y,
-);
-
-/// Function: FPDFText_GetCharIndexAtPos
-/// Get the index of a character at or nearby a certain position on the
-/// page.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// x           -   X position in PDF "user space".
-/// y           -   Y position in PDF "user space".
-/// xTolerance  -   An x-axis tolerance value for character hit
-/// detection, in point units.
-/// yTolerance  -   A y-axis tolerance value for character hit
-/// detection, in point units.
-/// Return Value:
-/// The zero-based index of the character at, or nearby the point (x,y).
-/// If there is no character at or nearby the point, return value will
-/// be -1. If an error occurs, -3 will be returned.
-@ffi.Native<
-  ffi.Int Function(
-    FPDF_TEXTPAGE,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-  )
->()
-external int FPDFText_GetCharIndexAtPos(
-  FPDF_TEXTPAGE text_page,
-  double x,
-  double y,
-  double xTolerance,
-  double yTolerance,
-);
-
-/// Function: FPDFText_GetText
-/// Extract unicode text string from the page.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// start_index -   Index for the start characters.
-/// count       -   Number of UCS-2 values to be extracted.
-/// result      -   A buffer (allocated by application) receiving the
-/// extracted UCS-2 values. The buffer must be able to
-/// hold `count` UCS-2 values plus a terminator.
-/// Return Value:
-/// Number of characters written into the result buffer, including the
-/// trailing terminator.
-/// Comments:
-/// This function ignores characters without UCS-2 representations.
-/// It considers all characters on the page, even those that are not
-/// visible when the page has a cropbox. To filter out the characters
-/// outside of the cropbox, use FPDF_GetPageBoundingBox() and
-/// FPDFText_GetCharBox().
-@ffi.Native<
-  ffi.Int Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Int,
-    ffi.Pointer<ffi.UnsignedShort>,
-  )
->()
-external int FPDFText_GetText(
-  FPDF_TEXTPAGE text_page,
-  int start_index,
-  int count,
-  ffi.Pointer<ffi.UnsignedShort> result,
-);
-
-/// Function: FPDFText_CountRects
-/// Counts number of rectangular areas occupied by a segment of text,
-/// and caches the result for subsequent FPDFText_GetRect() calls.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// start_index -   Index for the start character.
-/// count       -   Number of characters, or -1 for all remaining.
-/// Return value:
-/// Number of rectangles, 0 if text_page is null, or -1 on bad
-/// start_index.
-/// Comments:
-/// This function, along with FPDFText_GetRect can be used by
-/// applications to detect the position on the page for a text segment,
-/// so proper areas can be highlighted. The FPDFText_* functions will
-/// automatically merge small character boxes into bigger one if those
-/// characters are on the same line and use same font settings.
-@ffi.Native<ffi.Int Function(FPDF_TEXTPAGE, ffi.Int, ffi.Int)>()
-external int FPDFText_CountRects(
-  FPDF_TEXTPAGE text_page,
-  int start_index,
-  int count,
-);
-
-/// Function: FPDFText_GetRect
-/// Get a rectangular area from the result generated by
-/// FPDFText_CountRects.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// rect_index  -   Zero-based index for the rectangle.
-/// left        -   Pointer to a double value receiving the rectangle
-/// left boundary.
-/// top         -   Pointer to a double value receiving the rectangle
-/// top boundary.
-/// right       -   Pointer to a double value receiving the rectangle
-/// right boundary.
-/// bottom      -   Pointer to a double value receiving the rectangle
-/// bottom boundary.
-/// Return Value:
-/// On success, return TRUE and fill in |left|, |top|, |right|, and
-/// |bottom|. If |text_page| is invalid then return FALSE, and the out
-/// parameters remain unmodified. If |text_page| is valid but
-/// |rect_index| is out of bounds, then return FALSE and set the out
-/// parameters to 0.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_TEXTPAGE,
-    ffi.Int,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-  )
->()
-external int FPDFText_GetRect(
-  FPDF_TEXTPAGE text_page,
-  int rect_index,
-  ffi.Pointer<ffi.Double> left,
-  ffi.Pointer<ffi.Double> top,
-  ffi.Pointer<ffi.Double> right,
-  ffi.Pointer<ffi.Double> bottom,
-);
-
-/// Function: FPDFText_GetBoundedText
-/// Extract unicode text within a rectangular boundary on the page.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// left        -   Left boundary.
-/// top         -   Top boundary.
-/// right       -   Right boundary.
-/// bottom      -   Bottom boundary.
-/// buffer      -   Caller-allocated buffer to receive UTF-16 values.
-/// buflen      -   Number of UTF-16 values (not bytes) that `buffer`
-/// is capable of holding.
-/// Return Value:
-/// If buffer is NULL or buflen is zero, return number of UTF-16
-/// values (not bytes) of text present within the rectangle, excluding
-/// a terminating NUL. Generally you should pass a buffer at least one
-/// larger than this if you want a terminating NUL, which will be
-/// provided if space is available. Otherwise, return number of UTF-16
-/// values copied into the buffer, including the terminating NUL when
-/// space for it is available.
-/// Comment:
-/// If the buffer is too small, as much text as will fit is copied into
-/// it. May return a split surrogate in that case.
-@ffi.Native<
-  ffi.Int Function(
-    FPDF_TEXTPAGE,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-    ffi.Double,
-    ffi.Pointer<ffi.UnsignedShort>,
-    ffi.Int,
-  )
->()
-external int FPDFText_GetBoundedText(
-  FPDF_TEXTPAGE text_page,
-  double left,
-  double top,
-  double right,
-  double bottom,
-  ffi.Pointer<ffi.UnsignedShort> buffer,
-  int buflen,
-);
-
-/// Function: FPDFText_FindStart
-/// Start a search.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// findwhat    -   A unicode match pattern.
-/// flags       -   Option flags.
-/// start_index -   Start from this character. -1 for end of the page.
-/// Return Value:
-/// A handle for the search context. FPDFText_FindClose must be called
-/// to release this handle.
-@ffi.Native<
-  FPDF_SCHHANDLE Function(
-    FPDF_TEXTPAGE,
-    FPDF_WIDESTRING,
-    ffi.UnsignedLong,
-    ffi.Int,
-  )
->()
-external FPDF_SCHHANDLE FPDFText_FindStart(
-  FPDF_TEXTPAGE text_page,
-  FPDF_WIDESTRING findwhat,
-  int flags,
-  int start_index,
-);
-
-/// Function: FPDFText_FindNext
-/// Search in the direction from page start to end.
-/// Parameters:
-/// handle      -   A search context handle returned by
-/// FPDFText_FindStart.
-/// Return Value:
-/// Whether a match is found.
-@ffi.Native<FPDF_BOOL Function(FPDF_SCHHANDLE)>()
-external int FPDFText_FindNext(FPDF_SCHHANDLE handle);
-
-/// Function: FPDFText_FindPrev
-/// Search in the direction from page end to start.
-/// Parameters:
-/// handle      -   A search context handle returned by
-/// FPDFText_FindStart.
-/// Return Value:
-/// Whether a match is found.
-@ffi.Native<FPDF_BOOL Function(FPDF_SCHHANDLE)>()
-external int FPDFText_FindPrev(FPDF_SCHHANDLE handle);
-
-/// Function: FPDFText_GetSchResultIndex
-/// Get the starting character index of the search result.
-/// Parameters:
-/// handle      -   A search context handle returned by
-/// FPDFText_FindStart.
-/// Return Value:
-/// Index for the starting character.
-@ffi.Native<ffi.Int Function(FPDF_SCHHANDLE)>()
-external int FPDFText_GetSchResultIndex(FPDF_SCHHANDLE handle);
-
-/// Function: FPDFText_GetSchCount
-/// Get the number of matched characters in the search result.
-/// Parameters:
-/// handle      -   A search context handle returned by
-/// FPDFText_FindStart.
-/// Return Value:
-/// Number of matched characters.
-@ffi.Native<ffi.Int Function(FPDF_SCHHANDLE)>()
-external int FPDFText_GetSchCount(FPDF_SCHHANDLE handle);
-
-/// Function: FPDFText_FindClose
-/// Release a search context.
-/// Parameters:
-/// handle      -   A search context handle returned by
-/// FPDFText_FindStart.
-/// Return Value:
-/// None.
-@ffi.Native<ffi.Void Function(FPDF_SCHHANDLE)>()
-external void FPDFText_FindClose(FPDF_SCHHANDLE handle);
-
-/// Function: FPDFLink_LoadWebLinks
-/// Prepare information about weblinks in a page.
-/// Parameters:
-/// text_page   -   Handle to a text page information structure.
-/// Returned by FPDFText_LoadPage function.
-/// Return Value:
-/// A handle to the page's links information structure, or
-/// NULL if something goes wrong.
-/// Comments:
-/// Weblinks are those links implicitly embedded in PDF pages. PDF also
-/// has a type of annotation called "link" (FPDFTEXT doesn't deal with
-/// that kind of link). FPDFTEXT weblink feature is useful for
-/// automatically detecting links in the page contents. For example,
-/// things like "https://www.example.com" will be detected, so
-/// applications can allow user to click on those characters to activate
-/// the link, even the PDF doesn't come with link annotations.
-///
-/// FPDFLink_CloseWebLinks must be called to release resources.
-@ffi.Native<FPDF_PAGELINK Function(FPDF_TEXTPAGE)>()
-external FPDF_PAGELINK FPDFLink_LoadWebLinks(FPDF_TEXTPAGE text_page);
-
-/// Function: FPDFLink_CountWebLinks
-/// Count number of detected web links.
-/// Parameters:
-/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
-/// Return Value:
-/// Number of detected web links.
-@ffi.Native<ffi.Int Function(FPDF_PAGELINK)>()
-external int FPDFLink_CountWebLinks(FPDF_PAGELINK link_page);
-
-/// Function: FPDFLink_GetURL
-/// Fetch the URL information for a detected web link.
-/// Parameters:
-/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
-/// link_index  -   Zero-based index for the link.
-/// buffer      -   A unicode buffer for the result.
-/// buflen      -   Number of 16-bit code units (not bytes) for the
-/// buffer, including an additional terminator.
-/// Return Value:
-/// If |buffer| is NULL or |buflen| is zero, return the number of 16-bit
-/// code units (not bytes) needed to buffer the result (an additional
-/// terminator is included in this count).
-/// Otherwise, copy the result into |buffer|, truncating at |buflen| if
-/// the result is too large to fit, and return the number of 16-bit code
-/// units actually copied into the buffer (the additional terminator is
-/// also included in this count).
-/// If |link_index| does not correspond to a valid link, then the result
-/// is an empty string.
-@ffi.Native<
-  ffi.Int Function(
-    FPDF_PAGELINK,
-    ffi.Int,
-    ffi.Pointer<ffi.UnsignedShort>,
-    ffi.Int,
-  )
->()
-external int FPDFLink_GetURL(
-  FPDF_PAGELINK link_page,
-  int link_index,
-  ffi.Pointer<ffi.UnsignedShort> buffer,
-  int buflen,
-);
-
-/// Function: FPDFLink_CountRects
-/// Count number of rectangular areas for the link.
-/// Parameters:
-/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
-/// link_index  -   Zero-based index for the link.
-/// Return Value:
-/// Number of rectangular areas for the link.  If |link_index| does
-/// not correspond to a valid link, then 0 is returned.
-@ffi.Native<ffi.Int Function(FPDF_PAGELINK, ffi.Int)>()
-external int FPDFLink_CountRects(FPDF_PAGELINK link_page, int link_index);
-
-/// Function: FPDFLink_GetRect
-/// Fetch the boundaries of a rectangle for a link.
-/// Parameters:
-/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
-/// link_index  -   Zero-based index for the link.
-/// rect_index  -   Zero-based index for a rectangle.
-/// left        -   Pointer to a double value receiving the rectangle
-/// left boundary.
-/// top         -   Pointer to a double value receiving the rectangle
-/// top boundary.
-/// right       -   Pointer to a double value receiving the rectangle
-/// right boundary.
-/// bottom      -   Pointer to a double value receiving the rectangle
-/// bottom boundary.
-/// Return Value:
-/// On success, return TRUE and fill in |left|, |top|, |right|, and
-/// |bottom|. If |link_page| is invalid or if |link_index| does not
-/// correspond to a valid link, then return FALSE, and the out
-/// parameters remain unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGELINK,
-    ffi.Int,
-    ffi.Int,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-  )
->()
-external int FPDFLink_GetRect(
-  FPDF_PAGELINK link_page,
-  int link_index,
-  int rect_index,
-  ffi.Pointer<ffi.Double> left,
-  ffi.Pointer<ffi.Double> top,
-  ffi.Pointer<ffi.Double> right,
-  ffi.Pointer<ffi.Double> bottom,
-);
-
-/// Experimental API.
-/// Function: FPDFLink_GetTextRange
-/// Fetch the start char index and char count for a link.
-/// Parameters:
-/// link_page         -   Handle returned by FPDFLink_LoadWebLinks.
-/// link_index        -   Zero-based index for the link.
-/// start_char_index  -   pointer to int receiving the start char index
-/// char_count        -   pointer to int receiving the char count
-/// Return Value:
-/// On success, return TRUE and fill in |start_char_index| and
-/// |char_count|. if |link_page| is invalid or if |link_index| does
-/// not correspond to a valid link, then return FALSE and the out
-/// parameters remain unmodified.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_PAGELINK,
-    ffi.Int,
-    ffi.Pointer<ffi.Int>,
-    ffi.Pointer<ffi.Int>,
-  )
->()
-external int FPDFLink_GetTextRange(
-  FPDF_PAGELINK link_page,
-  int link_index,
-  ffi.Pointer<ffi.Int> start_char_index,
-  ffi.Pointer<ffi.Int> char_count,
-);
-
-/// Function: FPDFLink_CloseWebLinks
-/// Release resources used by weblink feature.
-/// Parameters:
-/// link_page   -   Handle returned by FPDFLink_LoadWebLinks.
-/// Return Value:
-/// None.
-@ffi.Native<ffi.Void Function(FPDF_PAGELINK)>()
-external void FPDFLink_CloseWebLinks(FPDF_PAGELINK link_page);
-
-/// Experimental API.
-/// Get the number of embedded files in |document|.
-///
-/// document - handle to a document.
-///
-/// Returns the number of embedded files in |document|.
-@ffi.Native<ffi.Int Function(FPDF_DOCUMENT)>()
-external int FPDFDoc_GetAttachmentCount(FPDF_DOCUMENT document);
-
-/// Experimental API.
-/// Add an embedded file with |name| in |document|. If |name| is empty, or if
-/// |name| is the name of a existing embedded file in |document|, or if
-/// |document|'s embedded file name tree is too deep (i.e. |document| has too
-/// many embedded files already), then a new attachment will not be added.
-///
-/// document - handle to a document.
-/// name     - name of the new attachment.
-///
-/// Returns a handle to the new attachment object, or NULL on failure.
-@ffi.Native<FPDF_ATTACHMENT Function(FPDF_DOCUMENT, FPDF_WIDESTRING)>()
-external FPDF_ATTACHMENT FPDFDoc_AddAttachment(
-  FPDF_DOCUMENT document,
-  FPDF_WIDESTRING name,
-);
-
-/// Experimental API.
-/// Get the embedded attachment at |index| in |document|. Note that the returned
-/// attachment handle is only valid while |document| is open.
-///
-/// document - handle to a document.
-/// index    - the index of the requested embedded file.
-///
-/// Returns the handle to the attachment object, or NULL on failure.
-@ffi.Native<FPDF_ATTACHMENT Function(FPDF_DOCUMENT, ffi.Int)>()
-external FPDF_ATTACHMENT FPDFDoc_GetAttachment(
-  FPDF_DOCUMENT document,
-  int index,
-);
-
-/// Experimental API.
-/// Delete the embedded attachment at |index| in |document|. Note that this does
-/// not remove the attachment data from the PDF file; it simply removes the
-/// file's entry in the embedded files name tree so that it does not appear in
-/// the attachment list. This behavior may change in the future.
-///
-/// document - handle to a document.
-/// index    - the index of the embedded file to be deleted.
-///
-/// Returns true if successful.
-@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT, ffi.Int)>()
-external int FPDFDoc_DeleteAttachment(FPDF_DOCUMENT document, int index);
-
-/// Experimental API.
-/// Get the name of the |attachment| file. |buffer| is only modified if |buflen|
-/// is longer than the length of the file name. On errors, |buffer| is unmodified
-/// and the returned length is 0.
-///
-/// attachment - handle to an attachment.
-/// buffer     - buffer for holding the file name, encoded in UTF-16LE.
-/// buflen     - length of the buffer in bytes.
-///
-/// Returns the length of the file name in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_ATTACHMENT,
-    ffi.Pointer<FPDF_WCHAR>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFAttachment_GetName(
-  FPDF_ATTACHMENT attachment,
-  ffi.Pointer<FPDF_WCHAR> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Check if the params dictionary of |attachment| has |key| as a key.
-///
-/// attachment - handle to an attachment.
-/// key        - the key to look for, encoded in UTF-8.
-///
-/// Returns true if |key| exists.
-@ffi.Native<FPDF_BOOL Function(FPDF_ATTACHMENT, FPDF_BYTESTRING)>()
-external int FPDFAttachment_HasKey(
-  FPDF_ATTACHMENT attachment,
-  FPDF_BYTESTRING key,
-);
-
-/// Experimental API.
-/// Get the type of the value corresponding to |key| in the params dictionary of
-/// the embedded |attachment|.
-///
-/// attachment - handle to an attachment.
-/// key        - the key to look for, encoded in UTF-8.
-///
-/// Returns the type of the dictionary value.
-@ffi.Native<FPDF_OBJECT_TYPE Function(FPDF_ATTACHMENT, FPDF_BYTESTRING)>()
-external int FPDFAttachment_GetValueType(
-  FPDF_ATTACHMENT attachment,
-  FPDF_BYTESTRING key,
-);
-
-/// Experimental API.
-/// Set the string value corresponding to |key| in the params dictionary of the
-/// embedded file |attachment|, overwriting the existing value if any. The value
-/// type should be FPDF_OBJECT_STRING after this function call succeeds.
-///
-/// attachment - handle to an attachment.
-/// key        - the key to the dictionary entry, encoded in UTF-8.
-/// value      - the string value to be set, encoded in UTF-16LE.
-///
-/// Returns true if successful.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_ATTACHMENT, FPDF_BYTESTRING, FPDF_WIDESTRING)
->()
-external int FPDFAttachment_SetStringValue(
-  FPDF_ATTACHMENT attachment,
-  FPDF_BYTESTRING key,
-  FPDF_WIDESTRING value,
-);
-
-/// Experimental API.
-/// Get the string value corresponding to |key| in the params dictionary of the
-/// embedded file |attachment|. |buffer| is only modified if |buflen| is longer
-/// than the length of the string value. Note that if |key| does not exist in the
-/// dictionary or if |key|'s corresponding value in the dictionary is not a
-/// string (i.e. the value is not of type FPDF_OBJECT_STRING or
-/// FPDF_OBJECT_NAME), then an empty string would be copied to |buffer| and the
-/// return value would be 2. On other errors, nothing would be added to |buffer|
-/// and the return value would be 0.
-///
-/// attachment - handle to an attachment.
-/// key        - the key to the requested string value, encoded in UTF-8.
-/// buffer     - buffer for holding the string value encoded in UTF-16LE.
-/// buflen     - length of the buffer in bytes.
-///
-/// Returns the length of the dictionary value string in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_ATTACHMENT,
-    FPDF_BYTESTRING,
-    ffi.Pointer<FPDF_WCHAR>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFAttachment_GetStringValue(
-  FPDF_ATTACHMENT attachment,
-  FPDF_BYTESTRING key,
-  ffi.Pointer<FPDF_WCHAR> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Set the file data of |attachment|, overwriting the existing file data if any.
-/// The creation date and checksum will be updated, while all other dictionary
-/// entries will be deleted. Note that only contents with |len| smaller than
-/// INT_MAX is supported.
-///
-/// attachment - handle to an attachment.
-/// contents   - buffer holding the file data to write to |attachment|.
-/// len        - length of file data in bytes.
-///
-/// Returns true if successful.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_ATTACHMENT,
-    FPDF_DOCUMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFAttachment_SetFile(
-  FPDF_ATTACHMENT attachment,
-  FPDF_DOCUMENT document,
-  ffi.Pointer<ffi.Void> contents,
-  int len,
-);
-
-/// Experimental API.
-/// Get the file data of |attachment|.
-/// When the attachment file data is readable, true is returned, and |out_buflen|
-/// is updated to indicate the file data size. |buffer| is only modified if
-/// |buflen| is non-null and long enough to contain the entire file data. Callers
-/// must check both the return value and the input |buflen| is no less than the
-/// returned |out_buflen| before using the data.
-///
-/// Otherwise, when the attachment file data is unreadable or when |out_buflen|
-/// is null, false is returned and |buffer| and |out_buflen| remain unmodified.
-///
-/// attachment - handle to an attachment.
-/// buffer     - buffer for holding the file data from |attachment|.
-/// buflen     - length of the buffer in bytes.
-/// out_buflen - pointer to the variable that will receive the minimum buffer
-/// size to contain the file data of |attachment|.
-///
-/// Returns true on success, false otherwise.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_ATTACHMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-    ffi.Pointer<ffi.UnsignedLong>,
-  )
->()
-external int FPDFAttachment_GetFile(
-  FPDF_ATTACHMENT attachment,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-  ffi.Pointer<ffi.UnsignedLong> out_buflen,
-);
-
-/// Experimental API.
-/// Get the MIME type (Subtype) of the embedded file |attachment|. |buffer| is
-/// only modified if |buflen| is longer than the length of the MIME type string.
-/// If the Subtype is not found or if there is no file stream, an empty string
-/// would be copied to |buffer| and the return value would be 2. On other errors,
-/// nothing would be added to |buffer| and the return value would be 0.
-///
-/// attachment - handle to an attachment.
-/// buffer     - buffer for holding the MIME type string encoded in UTF-16LE.
-/// buflen     - length of the buffer in bytes.
-///
-/// Returns the length of the MIME type string in bytes.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_ATTACHMENT,
-    ffi.Pointer<FPDF_WCHAR>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFAttachment_GetSubtype(
-  FPDF_ATTACHMENT attachment,
-  ffi.Pointer<FPDF_WCHAR> buffer,
-  int buflen,
-);
-
-/// Function: FPDF_GetDefaultTTFMap
-/// Returns a pointer to the default character set to TT Font name map. The
-/// map is an array of FPDF_CharsetFontMap structs, with its end indicated
-/// by a { -1, NULL } entry.
-/// Parameters:
-/// None.
-/// Return Value:
-/// Pointer to the Charset Font Map.
-/// Note:
-/// Once FPDF_GetDefaultTTFMapCount() and FPDF_GetDefaultTTFMapEntry() are no
-/// longer experimental, this API will be marked as deprecated.
-/// See https://crbug.com/348468114
-@ffi.Native<ffi.Pointer<FPDF_CharsetFontMap> Function()>()
-external ffi.Pointer<FPDF_CharsetFontMap> FPDF_GetDefaultTTFMap();
-
-/// Experimental API.
-///
-/// Function: FPDF_GetDefaultTTFMapCount
-/// Returns the number of entries in the default character set to TT Font name
-/// map.
-/// Parameters:
-/// None.
-/// Return Value:
-/// The number of entries in the map.
-@ffi.Native<ffi.Size Function()>()
-external int FPDF_GetDefaultTTFMapCount();
-
-/// Experimental API.
-///
-/// Function: FPDF_GetDefaultTTFMapEntry
-/// Returns an entry in the default character set to TT Font name map.
-/// Parameters:
-/// index    -   The index to the entry in the map to retrieve.
-/// Return Value:
-/// A pointer to the entry, if it is in the map, or NULL if the index is out
-/// of bounds.
-@ffi.Native<ffi.Pointer<FPDF_CharsetFontMap> Function(ffi.Size)>()
-external ffi.Pointer<FPDF_CharsetFontMap> FPDF_GetDefaultTTFMapEntry(int index);
-
-/// Function: FPDF_AddInstalledFont
-/// Add a system font to the list in PDFium.
-/// Comments:
-/// This function is only called during the system font list building
-/// process.
-/// Parameters:
-/// mapper          -   Opaque pointer to Foxit font mapper
-/// face            -   The font face name
-/// charset         -   Font character set. See above defined constants.
-/// Return Value:
-/// None.
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
->()
-external void FPDF_AddInstalledFont(
-  ffi.Pointer<ffi.Void> mapper,
-  ffi.Pointer<ffi.Char> face,
-  int charset,
-);
-
-/// Function: FPDF_SetSystemFontInfo
-/// Set the system font info interface into PDFium
-/// Parameters:
-/// font_info       -   Pointer to a FPDF_SYSFONTINFO structure
-/// Return Value:
-/// None
-/// Comments:
-/// Platform support implementation should implement required methods of
-/// FFDF_SYSFONTINFO interface, then call this function during PDFium
-/// initialization process.
-///
-/// Call this with NULL to tell PDFium to stop using a previously set
-/// |FPDF_SYSFONTINFO|.
-@ffi.Native<ffi.Void Function(ffi.Pointer<FPDF_SYSFONTINFO>)>()
-external void FPDF_SetSystemFontInfo(ffi.Pointer<FPDF_SYSFONTINFO> font_info);
-
-/// Function: FPDF_GetDefaultSystemFontInfo
-/// Get default system font info interface for current platform
-/// Parameters:
-/// None
-/// Return Value:
-/// Pointer to a FPDF_SYSFONTINFO structure describing the default
-/// interface, or NULL if the platform doesn't have a default interface.
-/// Application should call FPDF_FreeDefaultSystemFontInfo to free the
-/// returned pointer.
-/// Comments:
-/// For some platforms, PDFium implements a default version of system
-/// font info interface. The default implementation can be passed to
-/// FPDF_SetSystemFontInfo().
-@ffi.Native<ffi.Pointer<FPDF_SYSFONTINFO> Function()>()
-external ffi.Pointer<FPDF_SYSFONTINFO> FPDF_GetDefaultSystemFontInfo();
-
-/// Function: FPDF_FreeDefaultSystemFontInfo
-/// Free a default system font info interface
-/// Parameters:
-/// font_info       -   Pointer to a FPDF_SYSFONTINFO structure
-/// Return Value:
-/// None
-/// Comments:
-/// This function should be called on the output from
-/// FPDF_GetDefaultSystemFontInfo() once it is no longer needed.
-@ffi.Native<ffi.Void Function(ffi.Pointer<FPDF_SYSFONTINFO>)>()
-external void FPDF_FreeDefaultSystemFontInfo(
-  ffi.Pointer<FPDF_SYSFONTINFO> font_info,
-);
-
-/// Function: FPDF_StructTree_GetForPage
-/// Get the structure tree for a page.
-/// Parameters:
-/// page        -   Handle to the page, as returned by FPDF_LoadPage().
-/// Return value:
-/// A handle to the structure tree or NULL on error. The caller owns the
-/// returned handle and must use FPDF_StructTree_Close() to release it.
-/// The handle should be released before |page| gets released.
-@ffi.Native<FPDF_STRUCTTREE Function(FPDF_PAGE)>()
-external FPDF_STRUCTTREE FPDF_StructTree_GetForPage(FPDF_PAGE page);
-
-/// Function: FPDF_StructTree_Close
-/// Release a resource allocated by FPDF_StructTree_GetForPage().
-/// Parameters:
-/// struct_tree -   Handle to the structure tree, as returned by
-/// FPDF_StructTree_LoadPage().
-/// Return value:
-/// None.
-@ffi.Native<ffi.Void Function(FPDF_STRUCTTREE)>()
-external void FPDF_StructTree_Close(FPDF_STRUCTTREE struct_tree);
-
-/// Function: FPDF_StructTree_CountChildren
-/// Count the number of children for the structure tree.
-/// Parameters:
-/// struct_tree -   Handle to the structure tree, as returned by
-/// FPDF_StructTree_LoadPage().
-/// Return value:
-/// The number of children, or -1 on error.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTTREE)>()
-external int FPDF_StructTree_CountChildren(FPDF_STRUCTTREE struct_tree);
-
-/// Function: FPDF_StructTree_GetChildAtIndex
-/// Get a child in the structure tree.
-/// Parameters:
-/// struct_tree -   Handle to the structure tree, as returned by
-/// FPDF_StructTree_LoadPage().
-/// index       -   The index for the child, 0-based.
-/// Return value:
-/// The child at the n-th index or NULL on error. The caller does not
-/// own the handle. The handle remains valid as long as |struct_tree|
-/// remains valid.
-/// Comments:
-/// The |index| must be less than the FPDF_StructTree_CountChildren()
-/// return value.
-@ffi.Native<FPDF_STRUCTELEMENT Function(FPDF_STRUCTTREE, ffi.Int)>()
-external FPDF_STRUCTELEMENT FPDF_StructTree_GetChildAtIndex(
-  FPDF_STRUCTTREE struct_tree,
-  int index,
-);
-
-/// Function: FPDF_StructElement_GetAltText
-/// Get the alt text for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// buffer         -   A buffer for output the alt text. May be NULL.
-/// buflen         -   The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the alt text, including the terminating NUL
-/// character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetAltText(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetActualText
-/// Get the actual text for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// buffer         -   A buffer for output the actual text. May be NULL.
-/// buflen         -   The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the actual text, including the terminating
-/// NUL character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetActualText(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetExpansion
-/// Get the expansion of an abbreviation or acronym for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// buffer         -   A buffer for output the expansion text. May be
-/// NULL.
-/// buflen         -   The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the expansion text, including the terminating
-/// NUL character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetExpansion(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Function: FPDF_StructElement_GetID
-/// Get the ID for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// buffer         -   A buffer for output the ID string. May be NULL.
-/// buflen         -   The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the ID string, including the terminating NUL
-/// character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetID(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetLang
-/// Get the case-insensitive IETF BCP 47 language code for an element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// buffer         -   A buffer for output the lang string. May be NULL.
-/// buflen         -   The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the ID string, including the terminating NUL
-/// character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetLang(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetStringAttribute
-/// Get a struct element attribute of type "name" or "string".
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// attr_name      -   The name of the attribute to retrieve.
-/// buffer         -   A buffer for output. May be NULL.
-/// buflen         -   The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the attribute value, including the
-/// terminating NUL character. The number of bytes is returned
-/// regardless of the |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    FPDF_BYTESTRING,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetStringAttribute(
-  FPDF_STRUCTELEMENT struct_element,
-  FPDF_BYTESTRING attr_name,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Function: FPDF_StructElement_GetMarkedContentID
-/// Get the marked content ID for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// Return value:
-/// The marked content ID of the element. If no ID exists, returns
-/// -1.
-/// Comments:
-/// FPDF_StructElement_GetMarkedContentIdAtIndex() may be able to
-/// extract more marked content IDs out of |struct_element|. This API
-/// may be deprecated in the future.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
-external int FPDF_StructElement_GetMarkedContentID(
-  FPDF_STRUCTELEMENT struct_element,
-);
-
-/// Function: FPDF_StructElement_GetType
-/// Get the type (/S) for a given element.
-/// Parameters:
-/// struct_element - Handle to the struct element.
-/// buffer         - A buffer for output. May be NULL.
-/// buflen         - The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the type, including the terminating NUL
-/// character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetType(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetObjType
-/// Get the object type (/Type) for a given element.
-/// Parameters:
-/// struct_element - Handle to the struct element.
-/// buffer         - A buffer for output. May be NULL.
-/// buflen         - The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the object type, including the terminating
-/// NUL character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetObjType(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Function: FPDF_StructElement_GetTitle
-/// Get the title (/T) for a given element.
-/// Parameters:
-/// struct_element - Handle to the struct element.
-/// buffer         - A buffer for output. May be NULL.
-/// buflen         - The length of the buffer, in bytes. May be 0.
-/// Return value:
-/// The number of bytes in the title, including the terminating NUL
-/// character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-/// Comments:
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_STRUCTELEMENT,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDF_StructElement_GetTitle(
-  FPDF_STRUCTELEMENT struct_element,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-);
-
-/// Function: FPDF_StructElement_CountChildren
-/// Count the number of children for the structure element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// Return value:
-/// The number of children, or -1 on error.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
-external int FPDF_StructElement_CountChildren(
-  FPDF_STRUCTELEMENT struct_element,
-);
-
-/// Function: FPDF_StructElement_GetChildAtIndex
-/// Get a child in the structure element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// index          -   The index for the child, 0-based.
-/// Return value:
-/// The child at the n-th index or NULL on error.
-/// Comments:
-/// If the child exists but is not an element, then this function will
-/// return NULL. This will also return NULL for out of bounds indices.
-/// The |index| must be less than the FPDF_StructElement_CountChildren()
-/// return value.
-@ffi.Native<FPDF_STRUCTELEMENT Function(FPDF_STRUCTELEMENT, ffi.Int)>()
-external FPDF_STRUCTELEMENT FPDF_StructElement_GetChildAtIndex(
-  FPDF_STRUCTELEMENT struct_element,
-  int index,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetChildMarkedContentID
-/// Get the child's content id
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// index          -   The index for the child, 0-based.
-/// Return value:
-/// The marked content ID of the child. If no ID exists, returns -1.
-/// Comments:
-/// If the child exists but is not a stream or object, then this
-/// function will return -1. This will also return -1 for out of bounds
-/// indices. Compared to FPDF_StructElement_GetMarkedContentIdAtIndex,
-/// it is scoped to the current page.
-/// The |index| must be less than the FPDF_StructElement_CountChildren()
-/// return value.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT, ffi.Int)>()
-external int FPDF_StructElement_GetChildMarkedContentID(
-  FPDF_STRUCTELEMENT struct_element,
-  int index,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetParent
-/// Get the parent of the structure element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// Return value:
-/// The parent structure element or NULL on error.
-/// Comments:
-/// If structure element is StructTreeRoot, then this function will
-/// return NULL.
-@ffi.Native<FPDF_STRUCTELEMENT Function(FPDF_STRUCTELEMENT)>()
-external FPDF_STRUCTELEMENT FPDF_StructElement_GetParent(
-  FPDF_STRUCTELEMENT struct_element,
-);
-
-/// Function: FPDF_StructElement_GetAttributeCount
-/// Count the number of attributes for the structure element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// Return value:
-/// The number of attributes, or -1 on error.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
-external int FPDF_StructElement_GetAttributeCount(
-  FPDF_STRUCTELEMENT struct_element,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetAttributeAtIndex
-/// Get an attribute object in the structure element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// index          -   The index for the attribute object, 0-based.
-/// Return value:
-/// The attribute object at the n-th index or NULL on error.
-/// Comments:
-/// If the attribute object exists but is not a dict, then this
-/// function will return NULL. This will also return NULL for out of
-/// bounds indices. The caller does not own the handle. The handle
-/// remains valid as long as |struct_element| remains valid.
-/// The |index| must be less than the
-/// FPDF_StructElement_GetAttributeCount() return value.
-@ffi.Native<FPDF_STRUCTELEMENT_ATTR Function(FPDF_STRUCTELEMENT, ffi.Int)>()
-external FPDF_STRUCTELEMENT_ATTR FPDF_StructElement_GetAttributeAtIndex(
-  FPDF_STRUCTELEMENT struct_element,
-  int index,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetCount
-/// Count the number of attributes in a structure element attribute map.
-/// Parameters:
-/// struct_attribute - Handle to the struct element attribute.
-/// Return value:
-/// The number of attributes, or -1 on error.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT_ATTR)>()
-external int FPDF_StructElement_Attr_GetCount(
-  FPDF_STRUCTELEMENT_ATTR struct_attribute,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetName
-/// Get the name of an attribute in a structure element attribute map.
-/// Parameters:
-/// struct_attribute   - Handle to the struct element attribute.
-/// index              - The index of attribute in the map.
-/// buffer             - A buffer for output. May be NULL. This is only
-/// modified if |buflen| is longer than the length
-/// of the key. Optional, pass null to just
-/// retrieve the size of the buffer needed.
-/// buflen             - The length of the buffer.
-/// out_buflen         - A pointer to variable that will receive the
-/// minimum buffer size to contain the key. Not
-/// filled if FALSE is returned.
-/// Return value:
-/// TRUE if the operation was successful, FALSE otherwise.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_STRUCTELEMENT_ATTR,
-    ffi.Int,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-    ffi.Pointer<ffi.UnsignedLong>,
-  )
->()
-external int FPDF_StructElement_Attr_GetName(
-  FPDF_STRUCTELEMENT_ATTR struct_attribute,
-  int index,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-  ffi.Pointer<ffi.UnsignedLong> out_buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetValue
-/// Get a handle to a value for an attribute in a structure element
-/// attribute map.
-/// Parameters:
-/// struct_attribute   - Handle to the struct element attribute.
-/// name               - The attribute name.
-/// Return value:
-/// Returns a handle to the value associated with the input, if any.
-/// Returns NULL on failure. The caller does not own the handle.
-/// The handle remains valid as long as |struct_attribute| remains
-/// valid.
-@ffi.Native<
-  FPDF_STRUCTELEMENT_ATTR_VALUE Function(
-    FPDF_STRUCTELEMENT_ATTR,
-    FPDF_BYTESTRING,
-  )
->()
-external FPDF_STRUCTELEMENT_ATTR_VALUE FPDF_StructElement_Attr_GetValue(
-  FPDF_STRUCTELEMENT_ATTR struct_attribute,
-  FPDF_BYTESTRING name,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetType
-/// Get the type of an attribute in a structure element attribute map.
-/// Parameters:
-/// value - Handle to the value.
-/// Return value:
-/// Returns the type of the value, or FPDF_OBJECT_UNKNOWN in case of
-/// failure. Note that this will never return FPDF_OBJECT_REFERENCE, as
-/// references are always dereferenced.
-@ffi.Native<FPDF_OBJECT_TYPE Function(FPDF_STRUCTELEMENT_ATTR_VALUE)>()
-external int FPDF_StructElement_Attr_GetType(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetBooleanValue
-/// Get the value of a boolean attribute in an attribute map as
-/// FPDF_BOOL. FPDF_StructElement_Attr_GetType() should have returned
-/// FPDF_OBJECT_BOOLEAN for this property.
-/// Parameters:
-/// value     - Handle to the value.
-/// out_value - A pointer to variable that will receive the value. Not
-/// filled if false is returned.
-/// Return value:
-/// Returns TRUE if the attribute maps to a boolean value, FALSE
-/// otherwise.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_STRUCTELEMENT_ATTR_VALUE, ffi.Pointer<FPDF_BOOL>)
->()
-external int FPDF_StructElement_Attr_GetBooleanValue(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-  ffi.Pointer<FPDF_BOOL> out_value,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetNumberValue
-/// Get the value of a number attribute in an attribute map as float.
-/// FPDF_StructElement_Attr_GetType() should have returned
-/// FPDF_OBJECT_NUMBER for this property.
-/// Parameters:
-/// value     - Handle to the value.
-/// out_value - A pointer to variable that will receive the value. Not
-/// filled if false is returned.
-/// Return value:
-/// Returns TRUE if the attribute maps to a number value, FALSE
-/// otherwise.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_STRUCTELEMENT_ATTR_VALUE, ffi.Pointer<ffi.Float>)
->()
-external int FPDF_StructElement_Attr_GetNumberValue(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-  ffi.Pointer<ffi.Float> out_value,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetStringValue
-/// Get the value of a string attribute in an attribute map as string.
-/// FPDF_StructElement_Attr_GetType() should have returned
-/// FPDF_OBJECT_STRING or FPDF_OBJECT_NAME for this property.
-/// Parameters:
-/// value      - Handle to the value.
-/// buffer     - A buffer for holding the returned key in UTF-16LE.
-/// This is only modified if |buflen| is longer than the
-/// length of the key. Optional, pass null to just
-/// retrieve the size of the buffer needed.
-/// buflen     - The length of the buffer.
-/// out_buflen - A pointer to variable that will receive the minimum
-/// buffer size to contain the key. Not filled if FALSE is
-/// returned.
-/// Return value:
-/// Returns TRUE if the attribute maps to a string value, FALSE
-/// otherwise.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_STRUCTELEMENT_ATTR_VALUE,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-    ffi.Pointer<ffi.UnsignedLong>,
-  )
->()
-external int FPDF_StructElement_Attr_GetStringValue(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-  ffi.Pointer<ffi.UnsignedLong> out_buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetBlobValue
-/// Get the value of a blob attribute in an attribute map as string.
-/// Parameters:
-/// value      - Handle to the value.
-/// buffer     - A buffer for holding the returned value. This is only
-/// modified if |buflen| is at least as long as the length
-/// of the value. Optional, pass null to just retrieve the
-/// size of the buffer needed.
-/// buflen     - The length of the buffer.
-/// out_buflen - A pointer to variable that will receive the minimum
-/// buffer size to contain the key. Not filled if FALSE is
-/// returned.
-/// Return value:
-/// Returns TRUE if the attribute maps to a string value, FALSE
-/// otherwise.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_STRUCTELEMENT_ATTR_VALUE,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedLong,
-    ffi.Pointer<ffi.UnsignedLong>,
-  )
->()
-external int FPDF_StructElement_Attr_GetBlobValue(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-  ffi.Pointer<ffi.Void> buffer,
-  int buflen,
-  ffi.Pointer<ffi.UnsignedLong> out_buflen,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_CountChildren
-/// Count the number of children values in an attribute.
-/// Parameters:
-/// value - Handle to the value.
-/// Return value:
-/// The number of children, or -1 on error.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT_ATTR_VALUE)>()
-external int FPDF_StructElement_Attr_CountChildren(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_Attr_GetChildAtIndex
-/// Get a child from an attribute.
-/// Parameters:
-/// value - Handle to the value.
-/// index - The index for the child, 0-based.
-/// Return value:
-/// The child at the n-th index or NULL on error.
-/// Comments:
-/// The |index| must be less than the
-/// FPDF_StructElement_Attr_CountChildren() return value.
-@ffi.Native<
-  FPDF_STRUCTELEMENT_ATTR_VALUE Function(FPDF_STRUCTELEMENT_ATTR_VALUE, ffi.Int)
->()
-external FPDF_STRUCTELEMENT_ATTR_VALUE FPDF_StructElement_Attr_GetChildAtIndex(
-  FPDF_STRUCTELEMENT_ATTR_VALUE value,
-  int index,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetMarkedContentIdCount
-/// Get the count of marked content ids for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// Return value:
-/// The count of marked content ids or -1 if none exists.
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT)>()
-external int FPDF_StructElement_GetMarkedContentIdCount(
-  FPDF_STRUCTELEMENT struct_element,
-);
-
-/// Experimental API.
-/// Function: FPDF_StructElement_GetMarkedContentIdAtIndex
-/// Get the marked content id at a given index for a given element.
-/// Parameters:
-/// struct_element -   Handle to the struct element.
-/// index          -   The index of the marked content id, 0-based.
-/// Return value:
-/// The marked content ID of the element. If no ID exists, returns
-/// -1.
-/// Comments:
-/// The |index| must be less than the
-/// FPDF_StructElement_GetMarkedContentIdCount() return value.
-/// This will likely supersede FPDF_StructElement_GetMarkedContentID().
-@ffi.Native<ffi.Int Function(FPDF_STRUCTELEMENT, ffi.Int)>()
-external int FPDF_StructElement_GetMarkedContentIdAtIndex(
-  FPDF_STRUCTELEMENT struct_element,
-  int index,
-);
-
-/// Experimental API.
-/// Import pages to a FPDF_DOCUMENT.
-///
-/// dest_doc     - The destination document for the pages.
-/// src_doc      - The document to be imported.
-/// page_indices - An array of page indices to be imported. The first page is
-/// zero. If |page_indices| is NULL, all pages from |src_doc|
-/// are imported.
-/// length       - The length of the |page_indices| array.
-/// index        - The page index at which to insert the first imported page
-/// into |dest_doc|. The first page is zero.
-///
-/// Returns TRUE on success. Returns FALSE if any pages in |page_indices| is
-/// invalid.
-@ffi.Native<
-  FPDF_BOOL Function(
-    FPDF_DOCUMENT,
-    FPDF_DOCUMENT,
-    ffi.Pointer<ffi.Int>,
-    ffi.UnsignedLong,
-    ffi.Int,
-  )
->()
-external int FPDF_ImportPagesByIndex(
-  FPDF_DOCUMENT dest_doc,
-  FPDF_DOCUMENT src_doc,
-  ffi.Pointer<ffi.Int> page_indices,
-  int length,
-  int index,
-);
-
-/// Import pages to a FPDF_DOCUMENT.
-///
-/// dest_doc  - The destination document for the pages.
-/// src_doc   - The document to be imported.
-/// pagerange - A page range string, Such as "1,3,5-7". The first page is one.
-/// If |pagerange| is NULL, all pages from |src_doc| are imported.
-/// index     - The page index at which to insert the first imported page into
-/// |dest_doc|. The first page is zero.
-///
-/// Returns TRUE on success. Returns FALSE if any pages in |pagerange| is
-/// invalid or if |pagerange| cannot be read.
-@ffi.Native<
-  FPDF_BOOL Function(FPDF_DOCUMENT, FPDF_DOCUMENT, FPDF_BYTESTRING, ffi.Int)
->()
-external int FPDF_ImportPages(
-  FPDF_DOCUMENT dest_doc,
-  FPDF_DOCUMENT src_doc,
-  FPDF_BYTESTRING pagerange,
-  int index,
-);
-
-/// Experimental API.
-/// Create a new document from |src_doc|.  The pages of |src_doc| will be
-/// combined to provide |num_pages_on_x_axis x num_pages_on_y_axis| pages per
-/// |output_doc| page.
-///
-/// src_doc             - The document to be imported.
-/// output_width        - The output page width in PDF "user space" units.
-/// output_height       - The output page height in PDF "user space" units.
-/// num_pages_on_x_axis - The number of pages on X Axis.
-/// num_pages_on_y_axis - The number of pages on Y Axis.
-///
-/// Return value:
-/// A handle to the created document, or NULL on failure.
-///
-/// Comments:
-/// number of pages per page = num_pages_on_x_axis * num_pages_on_y_axis
-@ffi.Native<
-  FPDF_DOCUMENT Function(
-    FPDF_DOCUMENT,
-    ffi.Float,
-    ffi.Float,
-    ffi.Size,
-    ffi.Size,
-  )
->()
-external FPDF_DOCUMENT FPDF_ImportNPagesToOne(
-  FPDF_DOCUMENT src_doc,
-  double output_width,
-  double output_height,
-  int num_pages_on_x_axis,
-  int num_pages_on_y_axis,
-);
-
-/// Experimental API.
-/// Create a template to generate form xobjects from |src_doc|'s page at
-/// |src_page_index|, for use in |dest_doc|.
-///
-/// Returns a handle on success, or NULL on failure. Caller owns the newly
-/// created object. The returned handle's lifetime is tied to |dest_doc| and not
-/// |src_doc|. It must be closed before |dest_doc|.
-@ffi.Native<FPDF_XOBJECT Function(FPDF_DOCUMENT, FPDF_DOCUMENT, ffi.Int)>()
-external FPDF_XOBJECT FPDF_NewXObjectFromPage(
-  FPDF_DOCUMENT dest_doc,
-  FPDF_DOCUMENT src_doc,
-  int src_page_index,
-);
-
-/// Experimental API.
-/// Close an FPDF_XOBJECT handle created by FPDF_NewXObjectFromPage().
-/// FPDF_PAGEOBJECTs created from the FPDF_XOBJECT handle are not affected.
-@ffi.Native<ffi.Void Function(FPDF_XOBJECT)>()
-external void FPDF_CloseXObject(FPDF_XOBJECT xobject);
-
-/// Experimental API.
-/// Create a new form object from an FPDF_XOBJECT object.
-///
-/// Returns a new form object on success, or NULL on failure. Caller owns the
-/// newly created object.
-@ffi.Native<FPDF_PAGEOBJECT Function(FPDF_XOBJECT)>()
-external FPDF_PAGEOBJECT FPDF_NewFormObjectFromXObject(FPDF_XOBJECT xobject);
-
-/// Copy the viewer preferences from |src_doc| into |dest_doc|.
-///
-/// dest_doc - Document to write the viewer preferences into.
-/// src_doc  - Document to read the viewer preferences from.
-///
-/// Returns TRUE on success.
-@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT, FPDF_DOCUMENT)>()
-external int FPDF_CopyViewerPreferences(
-  FPDF_DOCUMENT dest_doc,
-  FPDF_DOCUMENT src_doc,
-);
-
-/// Experimental API.
-///
-/// Determine if |document| represents a tagged PDF.
-///
-/// For the definition of tagged PDF, See (see 10.7 "Tagged PDF" in PDF
-/// Reference 1.7).
-///
-/// document - handle to a document.
-///
-/// Returns |true| iff |document| is a tagged PDF.
-@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT)>()
-external int FPDFCatalog_IsTagged(FPDF_DOCUMENT document);
-
-/// Experimental API.
-/// Gets the language of |document| from the catalog's /Lang entry.
-///
-/// document - handle to a document.
-/// buffer   - a buffer for the language string. May be NULL.
-/// buflen   - the length of the buffer, in bytes. May be 0.
-///
-/// Returns the number of bytes in the language string, including the
-/// trailing NUL character. The number of bytes is returned regardless of the
-/// |buffer| and |buflen| parameters.
-///
-/// Regardless of the platform, the |buffer| is always in UTF-16LE
-/// encoding. The string is terminated by a UTF16 NUL character. If
-/// |buflen| is less than the required length, or |buffer| is NULL,
-/// |buffer| will not be modified.
-///
-/// If |document| has no /Lang entry, an empty string is written to |buffer| and
-/// 2 is returned. On error, nothing is written to |buffer| and 0 is returned.
-@ffi.Native<
-  ffi.UnsignedLong Function(
-    FPDF_DOCUMENT,
-    ffi.Pointer<FPDF_WCHAR>,
-    ffi.UnsignedLong,
-  )
->()
-external int FPDFCatalog_GetLanguage(
-  FPDF_DOCUMENT document,
-  ffi.Pointer<FPDF_WCHAR> buffer,
-  int buflen,
-);
-
-/// Experimental API.
-/// Sets the language of |document| to |language|.
-///
-/// document - handle to a document.
-/// language - the language to set to.
-///
-/// Returns TRUE on success.
-@ffi.Native<FPDF_BOOL Function(FPDF_DOCUMENT, FPDF_WIDESTRING)>()
-external int FPDFCatalog_SetLanguage(
-  FPDF_DOCUMENT document,
-  FPDF_WIDESTRING language,
-);
-
-/// *******************PDF Core && PDF Page************************ */
+/// ============================================================
+/// PDF Core
+/// ============================================================
 final class Page_Size_Data extends ffi.Struct {
   @ffi.Float()
   external double width;
@@ -9331,11 +9327,16 @@ typedef pdf_core_t = ffi.Pointer<pdf_core_s>;
 
 final class page_size_data_s extends ffi.Opaque {}
 
+/// ============================================================
+/// Page Size
+/// ============================================================
 typedef page_size_data_t = ffi.Pointer<page_size_data_s>;
 
 final class pdf_page_s extends ffi.Opaque {}
 
-/// -------------------PDF Page-----------------------
+/// ============================================================
+/// PDF Page
+/// ============================================================
 typedef pdf_page_t = ffi.Pointer<pdf_page_s>;
 
 /// PDF text rendering modes
@@ -9952,32 +9953,6 @@ enum FPDF_FILEIDTYPE {
   };
 }
 
-/// IFPDF_RENDERINFO interface.
-final class _IFSDK_PAUSE extends ffi.Struct {
-  /// Version number of the interface. Currently must be 1.
-  @ffi.Int()
-  external int version;
-
-  /// Method: NeedToPauseNow
-  /// Check if we need to pause a progressive process now.
-  /// Interface Version:
-  /// 1
-  /// Implementation Required:
-  /// yes
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// Return Value:
-  /// Non-zero for pause now, 0 for continue.
-  external ffi.Pointer<
-    ffi.NativeFunction<FPDF_BOOL Function(ffi.Pointer<_IFSDK_PAUSE> pThis)>
-  >
-  NeedToPauseNow;
-
-  /// A user defined data pointer, used by user's application. Can be NULL.
-  external ffi.Pointer<ffi.Void> user;
-}
-
-typedef IFSDK_PAUSE = _IFSDK_PAUSE;
 typedef stbi_write_func =
     ffi.NativeFunction<
       ffi.Void Function(
@@ -9986,6 +9961,104 @@ typedef stbi_write_func =
         ffi.Int size,
       )
     >;
+
+/// Interface for checking whether sections of the file are available.
+final class _FX_FILEAVAIL extends ffi.Struct {
+  /// Version number of the interface. Must be 1.
+  @ffi.Int()
+  external int version;
+
+  /// Reports if the specified data section is currently available. A section is
+  /// available if all bytes in the section are available.
+  ///
+  /// Interface Version: 1
+  /// Implementation Required: Yes
+  ///
+  /// pThis  - pointer to the interface structure.
+  /// offset - the offset of the data section in the file.
+  /// size   - the size of the data section.
+  ///
+  /// Returns true if the specified data section at |offset| of |size|
+  /// is available.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      FPDF_BOOL Function(
+        ffi.Pointer<_FX_FILEAVAIL> pThis,
+        ffi.Size offset,
+        ffi.Size size,
+      )
+    >
+  >
+  IsDataAvail;
+}
+
+typedef FX_FILEAVAIL = _FX_FILEAVAIL;
+
+/// Download hints interface. Used to receive hints for further downloading.
+final class _FX_DOWNLOADHINTS extends ffi.Struct {
+  /// Version number of the interface. Must be 1.
+  @ffi.Int()
+  external int version;
+
+  /// Add a section to be downloaded.
+  ///
+  /// Interface Version: 1
+  /// Implementation Required: Yes
+  ///
+  /// pThis  - pointer to the interface structure.
+  /// offset - the offset of the hint reported to be downloaded.
+  /// size   - the size of the hint reported to be downloaded.
+  ///
+  /// The |offset| and |size| of the section may not be unique. Part of the
+  /// section might be already available. The download manager must deal with
+  /// overlapping sections.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<_FX_DOWNLOADHINTS> pThis,
+        ffi.Size offset,
+        ffi.Size size,
+      )
+    >
+  >
+  AddSegment;
+}
+
+typedef FX_DOWNLOADHINTS = _FX_DOWNLOADHINTS;
+
+/// Structure for custom file write
+final class FPDF_FILEWRITE_ extends ffi.Struct {
+  /// Version number of the interface. Currently must be 1.
+  @ffi.Int()
+  external int version;
+
+  /// Method: WriteBlock
+  /// Output a block of data in your custom way.
+  /// Interface Version:
+  /// 1
+  /// Implementation Required:
+  /// Yes
+  /// Comments:
+  /// Called by function FPDF_SaveDocument
+  /// Parameters:
+  /// self        -   Pointer to the structure itself
+  /// data        -   Pointer to a buffer to output
+  /// size        -   The size of the buffer.
+  /// Return value:
+  /// Should be non-zero if successful, zero for error.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FILEWRITE_> self,
+        ffi.Pointer<ffi.Void> data,
+        ffi.UnsignedLong size,
+      )
+    >
+  >
+  WriteBlock;
+}
+
+typedef FPDF_FILEWRITE = FPDF_FILEWRITE_;
 
 final class _IPDF_JsPlatform extends ffi.Struct {
   /// Version number of the interface. Currently must be 2.
@@ -11252,6 +11325,248 @@ final class _FPDF_FORMFILLINFO extends ffi.Struct {
 
 typedef FPDF_FORMFILLINFO = _FPDF_FORMFILLINFO;
 
+/// Interface: FPDF_SYSFONTINFO
+/// Interface for getting system font information and font mapping
+final class _FPDF_SYSFONTINFO extends ffi.Struct {
+  /// Version number of the interface. Currently must be 1 or 2.
+  /// Version 1: Traditional behavior - calls EnumFonts during initialization.
+  /// Version 2: Per-request behavior - skips EnumFonts, relies on MapFont.
+  /// Experimental: Subject to change based on feedback.
+  @ffi.Int()
+  external int version;
+
+  /// Method: Release
+  /// Give implementation a chance to release any data after the
+  /// interface is no longer used.
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// No
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// Return Value:
+  /// None
+  /// Comments:
+  /// Called by PDFium during the final cleanup process.
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<_FPDF_SYSFONTINFO> pThis)>
+  >
+  Release;
+
+  /// Method: EnumFonts
+  /// Enumerate all fonts installed on the system
+  /// Interface Version:
+  /// 1
+  /// Implementation Required:
+  /// No
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// pMapper     -   An opaque pointer to internal font mapper, used
+  /// when calling FPDF_AddInstalledFont().
+  /// Return Value:
+  /// None
+  /// Comments:
+  /// Implementations should call FPDF_AddInstalledFont() function for
+  /// each font found. Only TrueType/OpenType and Type1 fonts are
+  /// accepted by PDFium.
+  /// NOTE: This method will not be called when version is set to 2.
+  /// Version 2 relies entirely on MapFont() for per-request matching.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Pointer<ffi.Void> pMapper,
+      )
+    >
+  >
+  EnumFonts;
+
+  /// Method: MapFont
+  /// Use the system font mapper to get a font handle from requested
+  /// parameters.
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// Required if GetFont method is not implemented.
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// weight      -   Weight of the requested font. 400 is normal and
+  /// 700 is bold.
+  /// bItalic     -   Italic option of the requested font, TRUE or
+  /// FALSE.
+  /// charset     -   Character set identifier for the requested font.
+  /// See above defined constants.
+  /// pitch_family -  A combination of flags. See above defined
+  /// constants.
+  /// face        -   Typeface name. Currently use system local encoding
+  /// only.
+  /// bExact      -   Obsolete: this parameter is now ignored.
+  /// Return Value:
+  /// An opaque pointer for font handle, or NULL if system mapping is
+  /// not supported.
+  /// Comments:
+  /// If the system supports native font mapper (like Windows),
+  /// implementation can implement this method to get a font handle.
+  /// Otherwise, PDFium will do the mapping and then call GetFont
+  /// method. Only TrueType/OpenType and Type1 fonts are accepted
+  /// by PDFium.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<ffi.Void> Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Int weight,
+        FPDF_BOOL bItalic,
+        ffi.Int charset,
+        ffi.Int pitch_family,
+        ffi.Pointer<ffi.Char> face,
+        ffi.Pointer<FPDF_BOOL> bExact,
+      )
+    >
+  >
+  MapFont;
+
+  /// Method: GetFont
+  /// Get a handle to a particular font by its internal ID
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// Required if MapFont method is not implemented.
+  /// Return Value:
+  /// An opaque pointer for font handle.
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// face        -   Typeface name in system local encoding.
+  /// Comments:
+  /// If the system mapping not supported, PDFium will do the font
+  /// mapping and use this method to get a font handle.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<ffi.Void> Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Pointer<ffi.Char> face,
+      )
+    >
+  >
+  GetFont;
+
+  /// Method: GetFontData
+  /// Get font data from a font
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// Yes
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// hFont       -   Font handle returned by MapFont or GetFont method
+  /// table       -   TrueType/OpenType table identifier (refer to
+  /// TrueType specification), or 0 for the whole file.
+  /// buffer      -   The buffer receiving the font data. Can be NULL if
+  /// not provided.
+  /// buf_size    -   Buffer size, can be zero if not provided.
+  /// Return Value:
+  /// Number of bytes needed, if buffer not provided or not large
+  /// enough, or number of bytes written into buffer otherwise.
+  /// Comments:
+  /// Can read either the full font file, or a particular
+  /// TrueType/OpenType table.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.UnsignedLong Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Pointer<ffi.Void> hFont,
+        ffi.UnsignedInt table,
+        ffi.Pointer<ffi.UnsignedChar> buffer,
+        ffi.UnsignedLong buf_size,
+      )
+    >
+  >
+  GetFontData;
+
+  /// Method: GetFaceName
+  /// Get face name from a font handle
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// No
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// hFont       -   Font handle returned by MapFont or GetFont method
+  /// buffer      -   The buffer receiving the face name. Can be NULL if
+  /// not provided
+  /// buf_size    -   Buffer size, can be zero if not provided
+  /// Return Value:
+  /// Number of bytes needed, if buffer not provided or not large
+  /// enough, or number of bytes written into buffer otherwise.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.UnsignedLong Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Pointer<ffi.Void> hFont,
+        ffi.Pointer<ffi.Char> buffer,
+        ffi.UnsignedLong buf_size,
+      )
+    >
+  >
+  GetFaceName;
+
+  /// Method: GetFontCharset
+  /// Get character set information for a font handle
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// No
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// hFont       -   Font handle returned by MapFont or GetFont method
+  /// Return Value:
+  /// Character set identifier. See defined constants above.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Pointer<ffi.Void> hFont,
+      )
+    >
+  >
+  GetFontCharset;
+
+  /// Method: DeleteFont
+  /// Delete a font handle
+  /// Interface Version:
+  /// 1 and 2
+  /// Implementation Required:
+  /// Yes
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// hFont       -   Font handle returned by MapFont or GetFont method
+  /// Return Value:
+  /// None
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
+        ffi.Pointer<ffi.Void> hFont,
+      )
+    >
+  >
+  DeleteFont;
+}
+
+typedef FPDF_SYSFONTINFO = _FPDF_SYSFONTINFO;
+
+/// Struct: FPDF_CharsetFontMap
+/// Provides the name of a font to use for a given charset value.
+final class FPDF_CharsetFontMap_ extends ffi.Struct {
+  /// Character Set Enum value, see FXFONT_*_CHARSET above.
+  @ffi.Int()
+  external int charset;
+
+  /// Name of default font to use with that charset.
+  external ffi.Pointer<ffi.Char> fontname;
+}
+
+typedef FPDF_CharsetFontMap = FPDF_CharsetFontMap_;
+
 enum FPDFANNOT_COLORTYPE {
   FPDFANNOT_COLORTYPE_Color(0),
   FPDFANNOT_COLORTYPE_InteriorColor(1);
@@ -11653,70 +11968,6 @@ enum FWL_VKEYCODE {
   }
 }
 
-/// Interface for checking whether sections of the file are available.
-final class _FX_FILEAVAIL extends ffi.Struct {
-  /// Version number of the interface. Must be 1.
-  @ffi.Int()
-  external int version;
-
-  /// Reports if the specified data section is currently available. A section is
-  /// available if all bytes in the section are available.
-  ///
-  /// Interface Version: 1
-  /// Implementation Required: Yes
-  ///
-  /// pThis  - pointer to the interface structure.
-  /// offset - the offset of the data section in the file.
-  /// size   - the size of the data section.
-  ///
-  /// Returns true if the specified data section at |offset| of |size|
-  /// is available.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      FPDF_BOOL Function(
-        ffi.Pointer<_FX_FILEAVAIL> pThis,
-        ffi.Size offset,
-        ffi.Size size,
-      )
-    >
-  >
-  IsDataAvail;
-}
-
-typedef FX_FILEAVAIL = _FX_FILEAVAIL;
-
-/// Download hints interface. Used to receive hints for further downloading.
-final class _FX_DOWNLOADHINTS extends ffi.Struct {
-  /// Version number of the interface. Must be 1.
-  @ffi.Int()
-  external int version;
-
-  /// Add a section to be downloaded.
-  ///
-  /// Interface Version: 1
-  /// Implementation Required: Yes
-  ///
-  /// pThis  - pointer to the interface structure.
-  /// offset - the offset of the hint reported to be downloaded.
-  /// size   - the size of the hint reported to be downloaded.
-  ///
-  /// The |offset| and |size| of the section may not be unique. Part of the
-  /// section might be already available. The download manager must deal with
-  /// overlapping sections.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FX_DOWNLOADHINTS> pThis,
-        ffi.Size offset,
-        ffi.Size size,
-      )
-    >
-  >
-  AddSegment;
-}
-
-typedef FX_DOWNLOADHINTS = _FX_DOWNLOADHINTS;
-
 /// Interface for unsupported feature notifications.
 final class _UNSUPPORT_INFO extends ffi.Struct {
   /// Version number of the interface. Must be 1.
@@ -11776,6 +12027,33 @@ final class tm extends ffi.Struct {
   external ffi.Pointer<ffi.Char> tm_zone;
 }
 
+/// IFPDF_RENDERINFO interface.
+final class _IFSDK_PAUSE extends ffi.Struct {
+  /// Version number of the interface. Currently must be 1.
+  @ffi.Int()
+  external int version;
+
+  /// Method: NeedToPauseNow
+  /// Check if we need to pause a progressive process now.
+  /// Interface Version:
+  /// 1
+  /// Implementation Required:
+  /// yes
+  /// Parameters:
+  /// pThis       -   Pointer to the interface structure itself
+  /// Return Value:
+  /// Non-zero for pause now, 0 for continue.
+  external ffi.Pointer<
+    ffi.NativeFunction<FPDF_BOOL Function(ffi.Pointer<_IFSDK_PAUSE> pThis)>
+  >
+  NeedToPauseNow;
+
+  /// A user defined data pointer, used by user's application. Can be NULL.
+  external ffi.Pointer<ffi.Void> user;
+}
+
+typedef IFSDK_PAUSE = _IFSDK_PAUSE;
+
 final class FPDF_IMAGEOBJ_METADATA extends ffi.Struct {
   /// The image width in pixels.
   @ffi.UnsignedInt()
@@ -11806,282 +12084,6 @@ final class FPDF_IMAGEOBJ_METADATA extends ffi.Struct {
   @ffi.Int()
   external int marked_content_id;
 }
-
-/// Structure for custom file write
-final class FPDF_FILEWRITE_ extends ffi.Struct {
-  /// Version number of the interface. Currently must be 1.
-  @ffi.Int()
-  external int version;
-
-  /// Method: WriteBlock
-  /// Output a block of data in your custom way.
-  /// Interface Version:
-  /// 1
-  /// Implementation Required:
-  /// Yes
-  /// Comments:
-  /// Called by function FPDF_SaveDocument
-  /// Parameters:
-  /// self        -   Pointer to the structure itself
-  /// data        -   Pointer to a buffer to output
-  /// size        -   The size of the buffer.
-  /// Return value:
-  /// Should be non-zero if successful, zero for error.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<FPDF_FILEWRITE_> self,
-        ffi.Pointer<ffi.Void> data,
-        ffi.UnsignedLong size,
-      )
-    >
-  >
-  WriteBlock;
-}
-
-typedef FPDF_FILEWRITE = FPDF_FILEWRITE_;
-
-/// Interface: FPDF_SYSFONTINFO
-/// Interface for getting system font information and font mapping
-final class _FPDF_SYSFONTINFO extends ffi.Struct {
-  /// Version number of the interface. Currently must be 1 or 2.
-  /// Version 1: Traditional behavior - calls EnumFonts during initialization.
-  /// Version 2: Per-request behavior - skips EnumFonts, relies on MapFont.
-  /// Experimental: Subject to change based on feedback.
-  @ffi.Int()
-  external int version;
-
-  /// Method: Release
-  /// Give implementation a chance to release any data after the
-  /// interface is no longer used.
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// No
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// Return Value:
-  /// None
-  /// Comments:
-  /// Called by PDFium during the final cleanup process.
-  external ffi.Pointer<
-    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<_FPDF_SYSFONTINFO> pThis)>
-  >
-  Release;
-
-  /// Method: EnumFonts
-  /// Enumerate all fonts installed on the system
-  /// Interface Version:
-  /// 1
-  /// Implementation Required:
-  /// No
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// pMapper     -   An opaque pointer to internal font mapper, used
-  /// when calling FPDF_AddInstalledFont().
-  /// Return Value:
-  /// None
-  /// Comments:
-  /// Implementations should call FPDF_AddInstalledFont() function for
-  /// each font found. Only TrueType/OpenType and Type1 fonts are
-  /// accepted by PDFium.
-  /// NOTE: This method will not be called when version is set to 2.
-  /// Version 2 relies entirely on MapFont() for per-request matching.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Pointer<ffi.Void> pMapper,
-      )
-    >
-  >
-  EnumFonts;
-
-  /// Method: MapFont
-  /// Use the system font mapper to get a font handle from requested
-  /// parameters.
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// Required if GetFont method is not implemented.
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// weight      -   Weight of the requested font. 400 is normal and
-  /// 700 is bold.
-  /// bItalic     -   Italic option of the requested font, TRUE or
-  /// FALSE.
-  /// charset     -   Character set identifier for the requested font.
-  /// See above defined constants.
-  /// pitch_family -  A combination of flags. See above defined
-  /// constants.
-  /// face        -   Typeface name. Currently use system local encoding
-  /// only.
-  /// bExact      -   Obsolete: this parameter is now ignored.
-  /// Return Value:
-  /// An opaque pointer for font handle, or NULL if system mapping is
-  /// not supported.
-  /// Comments:
-  /// If the system supports native font mapper (like Windows),
-  /// implementation can implement this method to get a font handle.
-  /// Otherwise, PDFium will do the mapping and then call GetFont
-  /// method. Only TrueType/OpenType and Type1 fonts are accepted
-  /// by PDFium.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Pointer<ffi.Void> Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Int weight,
-        FPDF_BOOL bItalic,
-        ffi.Int charset,
-        ffi.Int pitch_family,
-        ffi.Pointer<ffi.Char> face,
-        ffi.Pointer<FPDF_BOOL> bExact,
-      )
-    >
-  >
-  MapFont;
-
-  /// Method: GetFont
-  /// Get a handle to a particular font by its internal ID
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// Required if MapFont method is not implemented.
-  /// Return Value:
-  /// An opaque pointer for font handle.
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// face        -   Typeface name in system local encoding.
-  /// Comments:
-  /// If the system mapping not supported, PDFium will do the font
-  /// mapping and use this method to get a font handle.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Pointer<ffi.Void> Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Pointer<ffi.Char> face,
-      )
-    >
-  >
-  GetFont;
-
-  /// Method: GetFontData
-  /// Get font data from a font
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// Yes
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// hFont       -   Font handle returned by MapFont or GetFont method
-  /// table       -   TrueType/OpenType table identifier (refer to
-  /// TrueType specification), or 0 for the whole file.
-  /// buffer      -   The buffer receiving the font data. Can be NULL if
-  /// not provided.
-  /// buf_size    -   Buffer size, can be zero if not provided.
-  /// Return Value:
-  /// Number of bytes needed, if buffer not provided or not large
-  /// enough, or number of bytes written into buffer otherwise.
-  /// Comments:
-  /// Can read either the full font file, or a particular
-  /// TrueType/OpenType table.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.UnsignedLong Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Pointer<ffi.Void> hFont,
-        ffi.UnsignedInt table,
-        ffi.Pointer<ffi.UnsignedChar> buffer,
-        ffi.UnsignedLong buf_size,
-      )
-    >
-  >
-  GetFontData;
-
-  /// Method: GetFaceName
-  /// Get face name from a font handle
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// No
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// hFont       -   Font handle returned by MapFont or GetFont method
-  /// buffer      -   The buffer receiving the face name. Can be NULL if
-  /// not provided
-  /// buf_size    -   Buffer size, can be zero if not provided
-  /// Return Value:
-  /// Number of bytes needed, if buffer not provided or not large
-  /// enough, or number of bytes written into buffer otherwise.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.UnsignedLong Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Pointer<ffi.Void> hFont,
-        ffi.Pointer<ffi.Char> buffer,
-        ffi.UnsignedLong buf_size,
-      )
-    >
-  >
-  GetFaceName;
-
-  /// Method: GetFontCharset
-  /// Get character set information for a font handle
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// No
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// hFont       -   Font handle returned by MapFont or GetFont method
-  /// Return Value:
-  /// Character set identifier. See defined constants above.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Pointer<ffi.Void> hFont,
-      )
-    >
-  >
-  GetFontCharset;
-
-  /// Method: DeleteFont
-  /// Delete a font handle
-  /// Interface Version:
-  /// 1 and 2
-  /// Implementation Required:
-  /// Yes
-  /// Parameters:
-  /// pThis       -   Pointer to the interface structure itself
-  /// hFont       -   Font handle returned by MapFont or GetFont method
-  /// Return Value:
-  /// None
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_SYSFONTINFO> pThis,
-        ffi.Pointer<ffi.Void> hFont,
-      )
-    >
-  >
-  DeleteFont;
-}
-
-typedef FPDF_SYSFONTINFO = _FPDF_SYSFONTINFO;
-
-/// Struct: FPDF_CharsetFontMap
-/// Provides the name of a font to use for a given charset value.
-final class FPDF_CharsetFontMap_ extends ffi.Struct {
-  /// Character Set Enum value, see FXFONT_*_CHARSET above.
-  @ffi.Int()
-  external int charset;
-
-  /// Name of default font to use with that charset.
-  external ffi.Pointer<ffi.Char> fontname;
-}
-
-typedef FPDF_CharsetFontMap = FPDF_CharsetFontMap_;
 
 const int FPDF_OBJECT_UNKNOWN = 0;
 
@@ -12159,6 +12161,12 @@ const int FPDFBitmap_BGRA = 4;
 
 const int FPDFBitmap_BGRA_Premul = 5;
 
+const int FPDF_MATCHCASE = 1;
+
+const int FPDF_MATCHWHOLEWORD = 2;
+
+const int FPDF_CONSECUTIVE = 4;
+
 const int PDFACTION_UNSUPPORTED = 0;
 
 const int PDFACTION_GOTO = 1;
@@ -12189,13 +12197,35 @@ const int PDFDEST_VIEW_FITBH = 7;
 
 const int PDFDEST_VIEW_FITBV = 8;
 
-const int FPDF_RENDER_READY = 0;
+const int PDF_LINEARIZATION_UNKNOWN = -1;
 
-const int FPDF_RENDER_TOBECONTINUED = 1;
+const int PDF_NOT_LINEARIZED = 0;
 
-const int FPDF_RENDER_DONE = 2;
+const int PDF_LINEARIZED = 1;
 
-const int FPDF_RENDER_FAILED = 3;
+const int PDF_DATA_ERROR = -1;
+
+const int PDF_DATA_NOTAVAIL = 0;
+
+const int PDF_DATA_AVAIL = 1;
+
+const int PDF_FORM_ERROR = -1;
+
+const int PDF_FORM_NOTAVAIL = 0;
+
+const int PDF_FORM_AVAIL = 1;
+
+const int PDF_FORM_NOTEXIST = 2;
+
+const int FPDF_INCREMENTAL = 1;
+
+const int FPDF_NO_INCREMENTAL = 2;
+
+const int FPDF_REMOVE_SECURITY_DEPRECATED = 3;
+
+const int FPDF_REMOVE_SECURITY = 4;
+
+const int FPDF_SUBSET_NEW_FONTS = 8;
 
 const int FORMTYPE_NONE = 0;
 
@@ -12290,6 +12320,44 @@ const int FPDF_FORMFIELD_TEXTFIELD = 6;
 const int FPDF_FORMFIELD_SIGNATURE = 7;
 
 const int FPDF_FORMFIELD_COUNT = 8;
+
+const int FXFONT_ANSI_CHARSET = 0;
+
+const int FXFONT_DEFAULT_CHARSET = 1;
+
+const int FXFONT_SYMBOL_CHARSET = 2;
+
+const int FXFONT_SHIFTJIS_CHARSET = 128;
+
+const int FXFONT_HANGEUL_CHARSET = 129;
+
+const int FXFONT_GB2312_CHARSET = 134;
+
+const int FXFONT_CHINESEBIG5_CHARSET = 136;
+
+const int FXFONT_GREEK_CHARSET = 161;
+
+const int FXFONT_VIETNAMESE_CHARSET = 163;
+
+const int FXFONT_HEBREW_CHARSET = 177;
+
+const int FXFONT_ARABIC_CHARSET = 178;
+
+const int FXFONT_CYRILLIC_CHARSET = 204;
+
+const int FXFONT_THAI_CHARSET = 222;
+
+const int FXFONT_EASTERNEUROPEAN_CHARSET = 238;
+
+const int FXFONT_FF_FIXEDPITCH = 1;
+
+const int FXFONT_FF_ROMAN = 16;
+
+const int FXFONT_FF_SCRIPT = 64;
+
+const int FXFONT_FW_NORMAL = 400;
+
+const int FXFONT_FW_BOLD = 700;
 
 const int FPDF_ANNOT_UNKNOWN = 0;
 
@@ -12403,36 +12471,6 @@ const int FPDF_ANNOT_AACTION_VALIDATE = 14;
 
 const int FPDF_ANNOT_AACTION_CALCULATE = 15;
 
-const int FLATTEN_FAIL = 0;
-
-const int FLATTEN_SUCCESS = 1;
-
-const int FLATTEN_NOTHINGTODO = 2;
-
-const int FLAT_NORMALDISPLAY = 0;
-
-const int FLAT_PRINT = 1;
-
-const int PDF_LINEARIZATION_UNKNOWN = -1;
-
-const int PDF_NOT_LINEARIZED = 0;
-
-const int PDF_LINEARIZED = 1;
-
-const int PDF_DATA_ERROR = -1;
-
-const int PDF_DATA_NOTAVAIL = 0;
-
-const int PDF_DATA_AVAIL = 1;
-
-const int PDF_FORM_ERROR = -1;
-
-const int PDF_FORM_NOTAVAIL = 0;
-
-const int PDF_FORM_AVAIL = 1;
-
-const int PDF_FORM_NOTEXIST = 2;
-
 const int FPDF_UNSP_DOC_XFAFORM = 1;
 
 const int FPDF_UNSP_DOC_PORTABLECOLLECTION = 2;
@@ -12476,6 +12514,24 @@ const int PAGEMODE_FULLSCREEN = 3;
 const int PAGEMODE_USEOC = 4;
 
 const int PAGEMODE_USEATTACHMENTS = 5;
+
+const int FPDF_RENDER_READY = 0;
+
+const int FPDF_RENDER_TOBECONTINUED = 1;
+
+const int FPDF_RENDER_DONE = 2;
+
+const int FPDF_RENDER_FAILED = 3;
+
+const int FLATTEN_FAIL = 0;
+
+const int FLATTEN_SUCCESS = 1;
+
+const int FLATTEN_NOTHINGTODO = 2;
+
+const int FLAT_NORMALDISPLAY = 0;
+
+const int FLAT_PRINT = 1;
 
 const int FPDF_COLORSPACE_UNKNOWN = 0;
 
@@ -12560,57 +12616,3 @@ const int FPDF_PRINTMODE_EMF_IMAGE_MASKS = 6;
 const int FPDF_PRINTMODE_POSTSCRIPT3_TYPE42 = 7;
 
 const int FPDF_PRINTMODE_POSTSCRIPT3_TYPE42_PASSTHROUGH = 8;
-
-const int FPDF_INCREMENTAL = 1;
-
-const int FPDF_NO_INCREMENTAL = 2;
-
-const int FPDF_REMOVE_SECURITY_DEPRECATED = 3;
-
-const int FPDF_REMOVE_SECURITY = 4;
-
-const int FPDF_SUBSET_NEW_FONTS = 8;
-
-const int FPDF_MATCHCASE = 1;
-
-const int FPDF_MATCHWHOLEWORD = 2;
-
-const int FPDF_CONSECUTIVE = 4;
-
-const int FXFONT_ANSI_CHARSET = 0;
-
-const int FXFONT_DEFAULT_CHARSET = 1;
-
-const int FXFONT_SYMBOL_CHARSET = 2;
-
-const int FXFONT_SHIFTJIS_CHARSET = 128;
-
-const int FXFONT_HANGEUL_CHARSET = 129;
-
-const int FXFONT_GB2312_CHARSET = 134;
-
-const int FXFONT_CHINESEBIG5_CHARSET = 136;
-
-const int FXFONT_GREEK_CHARSET = 161;
-
-const int FXFONT_VIETNAMESE_CHARSET = 163;
-
-const int FXFONT_HEBREW_CHARSET = 177;
-
-const int FXFONT_ARABIC_CHARSET = 178;
-
-const int FXFONT_CYRILLIC_CHARSET = 204;
-
-const int FXFONT_THAI_CHARSET = 222;
-
-const int FXFONT_EASTERNEUROPEAN_CHARSET = 238;
-
-const int FXFONT_FF_FIXEDPITCH = 1;
-
-const int FXFONT_FF_ROMAN = 16;
-
-const int FXFONT_FF_SCRIPT = 64;
-
-const int FXFONT_FW_NORMAL = 400;
-
-const int FXFONT_FW_BOLD = 700;

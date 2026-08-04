@@ -3,6 +3,11 @@ description: "than_pdf_engine -> dart package.wrapper cpp langage.pdfium + stb_i
 version: 0.4.0
 repository: https://github.com/ThanCoder/than_pdf_engine.git
 
+
+platforms:
+  android:
+  linux:
+
 environment:
   sdk: ^3.12.0
 
@@ -12,8 +17,7 @@ dependencies:
   logging: ^1.3.0
   ffi: ^2.1.4
   path: ^1.9.1
-  # archive: ^4.0.9
-
+  
 dev_dependencies:
   ffigen: ^20.1.1
   flutter_lints: ^6.0.0

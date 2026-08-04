@@ -2,11 +2,12 @@
 
 import 'dart:io';
 
+import 'package:dart_core_extensions/dart_core_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:than_pdf_engine/core/pdf_thumbnail_generator.dart';
 import 'package:than_pdf_engine/than_pdf_engine.dart';
 import 'package:than_pdf_engine_example/my_page.dart';
-import 'package:than_pkg/than_pkg.dart';
+import 'package:than_pkg/than_pkg.dart' show ThanPkg;
 
 void main() {
   runApp(MaterialApp(theme: ThemeData.light(), home: const MyApp()));
@@ -65,13 +66,14 @@ class _MyAppState extends State<MyApp> {
             }
             final g = PdfThumbnailGenerator.instance;
 
-            final dir = Directory('/home/thancoder/Documents/pdf');
+            final dir = Directory('/home/thancoder/Documents/Docs');
             final outDir = Directory('${dir.path}/thumbnails');
             if (!outDir.existsSync()) {
               outDir.createSync(recursive: false);
             }
             for (var file in dir.listSync(followLinks: false)) {
-              final name = file.path.split('/').last.split('.').first;
+              final name = file.getName();
+              if (!name.endsWith('.pdf')) continue;
               print('$name: Starting...');
 
               final res = await g.generate(
