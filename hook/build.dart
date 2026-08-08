@@ -4,8 +4,8 @@ import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:than_pdf_engine/core/util_ext.dart';
 
-import 'build_android.dart';
-import 'build_linux.dart';
+import 'android_lib.dart';
+import 'linux_lib.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
@@ -21,9 +21,9 @@ void main(List<String> args) async {
     // final libFile = File(join(outLibFolder.path, libName));
 
     if (targetOS == .linux) {
-      await buildLinux(libName, input, output);
+      await linuxLib(libName, input, output);
     } else if (targetOS == .android) {
-      await buildAndroid(libName, input, output);
+      await androidLib(libName, input, output);
     }
     // await buildAllPlatfroms(input, output);
   });
