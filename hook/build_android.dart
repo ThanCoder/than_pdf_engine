@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
-import 'package:path/path.dart';
+import 'package:than_pdf_engine/core/util_ext.dart';
 
 Future<void> buildAndroid(
   String libName,
@@ -13,7 +13,7 @@ Future<void> buildAndroid(
 ) async {
   final packageName = input.packageName;
   final targetArchitecture = input.config.code.targetArchitecture;
-  
+
   final nativeName = switch (targetArchitecture) {
     .arm => 'pdfium-wrapper-android-arm',
     .arm64 => 'pdfium-wrapper-android-arm64',
@@ -22,12 +22,11 @@ Future<void> buildAndroid(
   };
 
   final wrapperZipFile = File(
-    join(
-      input.packageRoot.toFilePath(),
-      'native_libs',
-      nativeName.toString(),
-      libName,
-    ),
+    input.packageRoot
+        .toFilePath()
+        .join('native_libs')
+        .join(nativeName.toString())
+        .join(libName),
   );
 
   // ၃။ Wrapper Library ကို Asset ထဲ ထည့်ခြင်း

@@ -1,6 +1,6 @@
 # 0.5.0
 
-- Changed ``
+- Fixed Error `PdfThumbnailGenerator` -> `App Force Closed.`
 
 # 0.4.0
 

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
-import 'package:path/path.dart';
+import 'package:than_pdf_engine/core/util_ext.dart';
 
 import 'build_android.dart';
 import 'build_linux.dart';
@@ -13,7 +13,7 @@ void main(List<String> args) async {
     final libName = 'libpdfium_wrapper.so';
 
     final outLibFolder = Directory(
-      join(input.packageRoot.toFilePath(), '.dart_tool', 'lib'),
+      input.packageRoot.toFilePath().join('.dart_tool').join('lib'),
     );
     if (!outLibFolder.existsSync()) {
       await outLibFolder.create(recursive: true);
