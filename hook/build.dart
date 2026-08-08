@@ -4,6 +4,7 @@ import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart';
 
+import 'build_android.dart';
 import 'build_linux.dart';
 
 void main(List<String> args) async {
@@ -22,7 +23,7 @@ void main(List<String> args) async {
     if (targetOS == .linux) {
       await buildLinux(libName, input, output);
     } else if (targetOS == .android) {
-      // await buildAndroid(input, output);
+      await buildAndroid(libName, input, output);
     }
     // await buildAllPlatfroms(input, output);
   });
