@@ -35,6 +35,6 @@ src/.cache
 # ဒါပေမဲ့ .gitkeep file တွေကိုတော့ skip မလုပ်ဘဲ track လုပ်ခွင့်ပေးမယ်
 !**/.gitkeep
 
-src/lib/android/arm64-v8a/*.so
-src/lib/android/armeabi-v7a/*.so
-src/lib/linux/x64/*.so
+# src/lib/android/arm64-v8a/*.so
+# src/lib/android/armeabi-v7a/*.so
+# src/lib/linux/x64/*.so
