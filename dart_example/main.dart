@@ -2,7 +2,6 @@
 
 import 'dart:io';
 
-import 'package:than_pdf_engine/than_pdf_engine.dart';
 
 void main() async {
   final dir = Directory('/home/thancoder/Documents/pdf');
@@ -18,12 +17,12 @@ void main() async {
     if (!name.endsWith('.pdf')) continue;
     final parts = name.split('.');
     parts.removeLast();
-    final nameOnly = parts.join();
+    // final nameOnly = parts.join();
 
-    await PdfThumbnailGenerator.instance.generate(
-      file.path,
-      '${outDir.path}/$nameOnly.png',
-    );
+    // await PdfThumbnailGenerator.instance.generate(
+    //   file.path,
+    //   '${outDir.path}/$nameOnly.png',
+    // );
 
     print(file);
   }

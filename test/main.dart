@@ -4,51 +4,43 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:than_pdf_engine/core/pdf_thumbnail_generator.dart';
+import 'package:than_pdf_engine/core/pdf_doc/pdf_document.dart';
+import 'package:than_pdf_engine/core/types/result.dart';
 import 'package:than_pdf_engine/than_pdf_engine.dart';
 import 'package:than_pdf_engine/than_pdf_engine_bindings_generated.dart';
 
 void main() async {
-  final g = PdfThumbnailGenerator.instance;
+  final path =
+      '/home/thancoder/Documents/pdf/၁၉၆၈ခုနှစ်တွင်အင်မော်တယ်တစ်ပါးဖြစ်လာခြင်း_Book_1_3.pdf';
+  final doc = PdfDocumentFile();
 
-  for (var i = 0; i < 10; i++) {
-    final res = await g.generate('', '', overrideImage: true);
-    print('res: $res');
+  final docResult = doc.open(path);
+  if (docResult.isErr) {
+    print(docResult.unwrapError());
+    return;
   }
-  // final pdf = pdf_core_create();
-  // final pathPtr = "/home/thancoder/Documents/test3.pdf".toNativeUtf8();
-  // pdf_core_openFile(pdf, pathPtr.cast<Char>(), nullptr);
-  // final pageCount = pdf_core_getPageCount(pdf);
-  // print('count: ${pdf_core_getPageCount(pdf)}');
 
-  // await PdfCore.genThumbnailJpg(
-  //   "/home/thancoder/Documents/test3.pdf",
-  //   'test3.jpg',
-  // );
-  // await PdfCore.genThumbnailPng(
-  //   "/home/thancoder/Documents/test3.pdf",
-  //   'test3.png',
-  // );
+  print('page: ${doc.pageCount}');
 
-  /// get PageSize class
-  ///
-  // await PdfCore.getAllPageSizedList('/home/thancoder/Documents/test3.pdf');
+  // for (var page in doc.allPages.unwrapOr([])) {
+  //   print('page: $page');
+  // }
 
-  // pdf_core_destroy(pdf);
-  // calloc.free(pathPtr);
-  // Pdf Background Wroker
-  // do isolate
-  // final pdfWorker = PdfBackgroundWorker.getInstance;
+  final page = PdfPage(doc);
+  final pageResult = page.loadPage(0);
+  if (pageResult.isErr) {
+    print(pageResult.unwrapError());
+    return;
+  }
 
-  // /// wroker init
-  // await pdfWorker.run('/home/thancoder/Documents/test3.pdf');
+  final res = page.savePngImageFile('thumb.png');
+  page.saveJpgImageFile('thumb.jpg');
 
-  // /// current supported JPG Image
-  // pdfWorker.requestPageImageJpg(pageIndex, width: width, height: height)
+  if (res.isErr) {
+    print('Error: ${res.unwrapError()}');
+    return;
+  }
+  print('Saved');
 
-  // // need to stop
-  // //it will call [stop] method
-  // await pdfWorker.dispose();
-  // same
-  // await pdfWorker.stop();
+  doc.close();
 }
