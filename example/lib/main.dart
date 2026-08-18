@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
+import 'package:than_pdf_engine_example/my_page.dart';
 import 'package:than_pkg/than_pkg.dart' show ThanPkg;
 
 void main() {
@@ -17,40 +18,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(
-              child: Text('Test'),
-              onPressed: () => goPage('/home/thancoder/Documents/pdf/test.pdf'),
-            ),
-            TextButton(
-              child: Text('Test 1'),
-              onPressed: () =>
-                  goPage('/home/thancoder/Documents/pdf/test1.pdf'),
-            ),
-            TextButton(
-              child: Text('Test 2'),
-              onPressed: () =>
-                  goPage('/home/thancoder/Documents/pdf/test2.pdf'),
-            ),
-            TextButton(
-              child: Text('Test 3'),
-              onPressed: () =>
-                  goPage('/home/thancoder/Documents/pdf/test3.pdf'),
-            ),
-            TextButton(
-              onPressed: () => goPage('/storage/emulated/0/test.pdf'),
-              child: Text('Android Small Pdf'),
-            ),
-            TextButton(
-              onPressed: () => goPage('/storage/emulated/0/test2.pdf'),
-              child: Text('Android Big Pdf'),
-            ),
-          ],
-        ),
-      ),
+      body: _content(),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           try {
@@ -86,10 +54,47 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  Center _content() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TextButton(
+            child: Text('Test'),
+            onPressed: () => goPage('/home/thancoder/Documents/pdf/test.pdf'),
+          ),
+          TextButton(
+            child: Text('Test 1'),
+            onPressed: () =>
+                goPage('/home/thancoder/Documents/pdf/test1.pdf'),
+          ),
+          TextButton(
+            child: Text('Test 2'),
+            onPressed: () =>
+                goPage('/home/thancoder/Documents/pdf/test2.pdf'),
+          ),
+          TextButton(
+            child: Text('Test 3'),
+            onPressed: () =>
+                goPage('/home/thancoder/Documents/pdf/test3.pdf'),
+          ),
+          TextButton(
+            onPressed: () => goPage('/storage/emulated/0/test.pdf'),
+            child: Text('Android Small Pdf'),
+          ),
+          TextButton(
+            onPressed: () => goPage('/storage/emulated/0/test2.pdf'),
+            child: Text('Android Big Pdf'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void goPage(String path) {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => MyPage(path: path)),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MyPage(path: path)),
+    );
   }
 }

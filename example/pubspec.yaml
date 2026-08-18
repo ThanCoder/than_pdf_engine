@@ -19,6 +19,7 @@ dependencies:
   t_widgets: ^2.6.1
   pdfium_dart: ^0.2.5
   dart_core_extensions: ^0.4.0
+  image: ^4.9.1
 
 dev_dependencies:
   flutter_test:
