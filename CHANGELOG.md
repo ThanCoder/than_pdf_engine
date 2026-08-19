@@ -1,3 +1,5 @@
+# 1.1.0
+* Fixed `PdfImageGenerator`
 # 1.0.0
 
 ### Previous Architecture
@@ -43,6 +45,7 @@ PNG / JPEG
 ```
 
 ## 0.5.0
+
 * Fixed Error `PdfThumbnailGenerator` -> `App Force Closed.`
 # 0.4.0
 
