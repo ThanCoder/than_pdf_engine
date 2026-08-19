@@ -24,10 +24,17 @@ class ReaderLoaded extends ReaderEvent {}
 
 class ReaderUILoaded extends ReaderEvent {}
 
+class PageChanged extends ReaderEvent {
+  final int page;
+  const PageChanged(this.page);
+}
+
 class ZoomChanged extends ReaderEvent {
   final double zoom;
   const ZoomChanged(this.zoom);
 }
+
+class ScrollbarUiChanged extends ReaderEvent {}
 
 class ScrollbarDragEvent extends ReaderEvent {
   final bool scrollbarDragging;

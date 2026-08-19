@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:dart_core_extensions/dart_core_extensions.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +5,7 @@ import 'package:flutter/physics.dart';
 import 'package:than_pdf_engine/core/high_level_api/reader/pdf_reader_worker.dart';
 import 'package:than_pdf_engine_example/reader/controllers/reader_state_controller.dart';
 import 'package:than_pdf_engine_example/reader/reader_item.dart';
-import 'package:than_pdf_engine_example/reader/utils/page_image_cache.dart';
+import 'package:than_pdf_engine_example/reader/reader_scrollbar.dart';
 import 'package:than_pdf_engine_example/reader/utils/page_offset_utils.dart';
 
 part 'logic/reader_init_mixin.dart';
@@ -38,7 +36,7 @@ class _PdfReaderState extends State<PdfReader>
   }
 
   void _fling(double velocity) {
-    _scrollController.value = stateController.currentOffset;
+    animationController.value = stateController.currentOffset;
 
     final simulation = FrictionSimulation(
       0.135,
@@ -46,15 +44,15 @@ class _PdfReaderState extends State<PdfReader>
       velocity,
     );
 
-    _scrollController.animateWith(simulation);
+    animationController.animateWith(simulation);
   }
 
-  late final AnimationController _scrollController;
+  late final AnimationController animationController;
   @override
   void initState() {
-    _scrollController = AnimationController.unbounded(vsync: this);
-    _scrollController.addListener(() {
-      final offset = _scrollController.value;
+    animationController = AnimationController.unbounded(vsync: this);
+    animationController.addListener(() {
+      final offset = animationController.value;
 
       stateController.setOffset(offset);
     });
@@ -96,14 +94,14 @@ class _PdfReaderState extends State<PdfReader>
       },
 
       onVerticalDragUpdate: (details) {
-        _scrollController.stop();
+        animationController.stop();
         stateController.scrollBy(-details.delta.dy);
       },
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerSignal: (event) {
           if (event is PointerScrollEvent) {
-            _scrollController.stop();
+            animationController.stop();
 
             final dy = event.scrollDelta.dy;
             stateController.scrollBy(dy);
@@ -113,45 +111,14 @@ class _PdfReaderState extends State<PdfReader>
           builder: (context, constraints) {
             final viewportHeight = constraints.maxHeight;
             final viewportWidth = constraints.maxWidth;
+
             stateController.updateViewportHeight(viewportWidth, viewportHeight);
+            stateController.setScrollbarHeight(viewportHeight);
             return Stack(
               children: [
                 _body(constraints),
-                StreamBuilder(
-                  stream: stateController.stream
-                      .whereType<UpdateVisiblePages>(),
-                  builder: (context, asyncSnapshot) {
-                    return _scrollbar(viewportHeight: viewportHeight);
-                  },
-                ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  child: IconButton(
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.red,
-                    ),
-                    onPressed: () {
-                      stateController.setZoom(stateController.zoom - 0.1);
-                    },
-                    icon: Icon(Icons.zoom_out),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 100,
-                  child: IconButton(
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.red,
-                    ),
-                    onPressed: () {
-                      stateController.setZoom(stateController.zoom + 0.1);
-                    },
-                    icon: Icon(Icons.zoom_in),
-                  ),
-                ),
+                _scrollbar(viewportHeight: viewportHeight),
+                testHeaderWidget(),
               ],
             );
           },
@@ -163,6 +130,9 @@ class _PdfReaderState extends State<PdfReader>
   Widget _body(BoxConstraints constraints) => StreamBuilder(
     stream: stateController.stream.whereType<UpdateVisiblePages>(),
     builder: (context, asyncSnapshot) {
+      print(
+        'visible: ${stateController.visiblePages.map((e) => e.pageIndex).toList()}',
+      );
       print('visiable len: ${stateController.visiblePages.length}');
       print('Cache Count: ${stateController.imageCache.len}');
       print('Cache Size: ${stateController.imageCache.size.toFileSizeLabel()}');
@@ -175,6 +145,7 @@ class _PdfReaderState extends State<PdfReader>
 
         list.add(
           Positioned(
+            key: ValueKey('item: ${p.pageIndex}'),
             top: top,
             left: left,
             width: p.width,
@@ -182,25 +153,15 @@ class _PdfReaderState extends State<PdfReader>
             child: StreamBuilder(
               stream: stateController.stream.whereType<ScrollbarDragEvent>(),
               builder: (context, asyncSnapshot) {
-                return stateController.scrollbarDragging
-                    ? Column(
-                        children: [
-                          Text('Page: ${p.pageIndex}'),
-                          Expanded(
-                            child: Icon(
-                              Icons.image_not_supported_rounded,
-                              size: 300,
-                            ),
-                          ),
-                        ],
-                      )
-                    : ReaderItem(
-                        key: ValueKey(p.pageIndex),
-                        offset: p,
-                        stateController: stateController,
-                        worker: worker,
-                        imageCache: stateController.imageCache,
-                      );
+                if (stateController.scrollbarDragging) {
+                  return Icon(Icons.image_not_supported_outlined, size: 300);
+                }
+                return ReaderItem(
+                  offset: p,
+                  stateController: stateController,
+                  worker: worker,
+                  imageCache: stateController.imageCache,
+                );
               },
             ),
           ),
@@ -211,58 +172,48 @@ class _PdfReaderState extends State<PdfReader>
   );
 
   Widget _scrollbar({required double viewportHeight}) {
-    final contentHeight = stateController.contentHeight;
-    final offset = stateController.currentOffset;
-
-    if (contentHeight <= viewportHeight) {
-      return const SizedBox.shrink();
-    }
-
-    final thumbHeight = max(
-      40.0,
-      viewportHeight * viewportHeight / contentHeight,
+    return ReaderScrollbar(
+      controller: stateController,
+      animationController: animationController,
     );
+  }
 
-    final maxOffset = contentHeight - viewportHeight;
-    final maxThumbOffset = viewportHeight - thumbHeight;
-
-    final thumbTop = (offset / maxOffset) * maxThumbOffset;
-
+  Positioned testHeaderWidget() {
     return Positioned(
-      top: thumbTop,
-      right: 2,
-      width: 8,
-      height: thumbHeight,
-      child: GestureDetector(
-        onVerticalDragStart: (_) {
-          stateController.scrollbarDragging = true;
-          stateController.addEvent(ScrollbarDragEvent(true));
-          _scrollController.stop();
-        },
-        onVerticalDragEnd: (details) {
-          stateController.scrollbarDragging = false;
-          stateController.addEvent(ScrollbarDragEvent(false));
-        },
-        onVerticalDragUpdate: (details) {
-          final contentHeight = stateController.contentHeight;
-          final viewportHeight = stateController.recentViewportHeight;
-
-          final maxOffset = contentHeight - viewportHeight;
-
-          final thumbHeight = viewportHeight * viewportHeight / contentHeight;
-
-          final maxThumbOffset = viewportHeight - thumbHeight;
-
-          final delta = details.delta.dy / maxThumbOffset * maxOffset;
-
-          stateController.scrollBy(delta);
-        },
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: .55),
-            borderRadius: BorderRadius.circular(4),
+      top: 0,
+      left: 0,
+      child: Row(
+        spacing: 8,
+        children: [
+          StreamBuilder(
+            stream: stateController.stream.whereType<PageChanged>(),
+            builder: (context, asyncSnapshot) {
+              return Text(
+                '${stateController.page}/${stateController.totalPage}',
+              );
+            },
           ),
-        ),
+          IconButton(
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.red,
+            ),
+            onPressed: () {
+              stateController.setZoom(stateController.zoom - 0.1);
+            },
+            icon: Icon(Icons.zoom_out),
+          ),
+          IconButton(
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.red,
+            ),
+            onPressed: () {
+              stateController.setZoom(stateController.zoom + 0.1);
+            },
+            icon: Icon(Icons.zoom_in),
+          ),
+        ],
       ),
     );
   }

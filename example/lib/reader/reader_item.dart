@@ -1,5 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -27,19 +25,15 @@ class ReaderItem extends StatefulWidget {
 }
 
 class _ReaderItemState extends State<ReaderItem> {
+  Uint8List? _oldImage;
+  Uint8List? _newImage;
+
+  int _requestId = 0;
+
   @override
   void initState() {
     super.initState();
-
-    final data = widget.imageCache.get(
-      widget.offset.pageIndex,
-      width: widget.offset.width,
-      height: widget.offset.height,
-    );
-
-    if (data == null) {
-      init();
-    }
+    _load();
   }
 
   @override
@@ -48,72 +42,93 @@ class _ReaderItemState extends State<ReaderItem> {
 
     if (oldWidget.offset.width != widget.offset.width ||
         oldWidget.offset.height != widget.offset.height) {
-      init();
+      _load();
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  Future<void> _load() async {
+    final width = widget.offset.width;
+    final height = widget.offset.height;
+    final pageIndex = widget.offset.pageIndex;
 
-  void init() async {
-    final res = await widget.worker.getImage(
-      widget.offset.pageIndex,
-      quality: 90,
-      targetHeight: widget.offset.height.toInt(),
-      targetWidth: widget.offset.width.toInt(),
+    final cached = widget.imageCache.get(
+      pageIndex,
+      width: width,
+      height: height,
     );
-    if (res.isErr) {
+
+    if (cached != null) {
       if (!mounted) return;
-      setState(() {});
+
+      setState(() {
+        _oldImage = cached;
+        _newImage = null;
+      });
+
       return;
     }
-    widget.imageCache.put(
-      widget.offset.pageIndex,
-      res.unwrap(),
-      width: widget.offset.width,
-      height: widget.offset.height,
+
+    final requestId = ++_requestId;
+
+    final res = await widget.worker.getImage(
+      pageIndex,
+      quality: 90,
+      targetHeight: height.toInt(),
+      targetWidth: width.toInt(),
     );
-    if (!mounted) return;
-    setState(() {});
+
+    if (!mounted || requestId != _requestId || res.isErr) {
+      return;
+    }
+
+    final image = res.unwrap();
+
+    widget.imageCache.put(pageIndex, image, width: width, height: height);
+
+    if (!mounted || requestId != _requestId) {
+      return;
+    }
+
+    setState(() {
+      _newImage = image;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: .center,
       children: [
         Text('Page: ${widget.offset.pageIndex}'),
-        Expanded(child: body()),
+        Expanded(child: _image()),
       ],
     );
   }
 
-  Uint8List? oldCache;
+  Widget _image() {
+    final oldImage = _oldImage;
+    final newImage = _newImage;
 
-  Widget body() {
-    final data = widget.imageCache.get(
-      widget.offset.pageIndex,
-      width: widget.offset.width,
-      height: widget.offset.height,
-    );
-    if (data != null) {
-      oldCache = data;
+    if (oldImage == null && newImage == null) {
+      return const Icon(Icons.image_not_supported_rounded, size: 300);
     }
 
-    return AnimatedOpacity(
-      opacity: oldCache == null ? 0.0 : 1.0,
-      duration: const Duration(milliseconds: 200),
-      child: oldCache == null
-          ? const SizedBox.expand()
-          : Image.memory(
-              oldCache!,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (oldImage != null)
+          Image.memory(oldImage, fit: BoxFit.fill, gaplessPlayback: true),
+
+        if (newImage != null)
+          AnimatedOpacity(
+            opacity: 1,
+            duration: const Duration(milliseconds: 150),
+            child: Image.memory(
+              newImage,
               fit: BoxFit.fill,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.image_not_supported_outlined);
-              },
+              gaplessPlayback: true,
             ),
+          ),
+      ],
     );
   }
 }

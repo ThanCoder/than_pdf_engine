@@ -15,7 +15,7 @@ class PageImageCacheItem {
 class PageImageCache {
   final int maxCount;
 
-  PageImageCache({this.maxCount = 10});
+  PageImageCache({this.maxCount = 30});
 
   final _cache = <int, PageImageCacheItem>{};
 
@@ -25,7 +25,7 @@ class PageImageCache {
     return _cache.values.fold(0, (total, item) => total + item.data.length);
   }
 
-  bool contains(int page, {required double width, required double height}) {
+  bool contains(int page, {double width = 0, double height = 0}) {
     final item = _cache[page];
 
     if (item == null) {
@@ -35,12 +35,7 @@ class PageImageCache {
     return item.width == width && item.height == height;
   }
 
-  void put(
-    int page,
-    Uint8List data, {
-    required double width,
-    required double height,
-  }) {
+  void put(int page, Uint8List data, {double width = 0, double height = 0}) {
     // Existing item ကို remove လုပ်ပြီး
     // အသစ်ကို နောက်ဆုံးမှာထည့် → LRU
     _cache.remove(page);
@@ -52,7 +47,7 @@ class PageImageCache {
     }
   }
 
-  Uint8List? get(int page, {required double width, required double height}) {
+  Uint8List? get(int page, {double width = 0, double height = 0}) {
     final item = _cache[page];
 
     if (item == null) {

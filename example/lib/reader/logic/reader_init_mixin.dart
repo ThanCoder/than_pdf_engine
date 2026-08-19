@@ -51,6 +51,10 @@ mixin ReaderInitMixin {
       zoom: stateController.zoom,
     );
 
+    if (stateController.pages.isNotEmpty) {
+      stateController.totalPage = stateController.pages.length - 1;
+    }
+
     stateController.addEvent(ReaderLoaded());
 
     /// ui

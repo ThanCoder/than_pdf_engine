@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:than_pdf_engine/core/models/page_size.dart';
 import 'package:than_pdf_engine_example/reader/controllers/page_offset.dart';
+import 'package:than_pdf_engine_example/reader/controllers/reader_state.dart';
 import 'package:than_pdf_engine_example/reader/utils/page_image_cache.dart';
 import 'package:than_pdf_engine_example/reader/utils/page_offset_utils.dart';
 
@@ -18,6 +19,11 @@ class ReaderStateController {
   double recentViewportWidth = 0;
   bool scrollbarDragging = false;
   double zoom = 1.0;
+  int totalPage = 0;
+  int page = 0;
+  ScrollbarInfo? scrollbarInfo;
+  double scrollbarThumbHeight = 40;
+  double scrollbarHeight = 0;
 
   final PageImageCache imageCache = PageImageCache();
 
@@ -28,21 +34,23 @@ class ReaderStateController {
   }
 
   void updateViewportHeight(double viewportWidth, double viewportHeight) {
-    _con.add(UpdateViewort());
+    bool changed = false;
 
     if (recentViewportWidth != viewportWidth) {
       recentViewportWidth = viewportWidth;
       _con.add(UpdateViewortWidth());
-      //   // update page width
-      //   return;
+      changed = true;
     }
-    // //update page height
+
     if (recentViewportHeight != viewportHeight) {
       recentViewportHeight = viewportHeight;
       _con.add(UpdateViewortHeight());
-      //   return;
+      changed = true;
     }
-    updateVisiablePages();
+
+    if (changed) {
+      updateVisiablePages();
+    }
   }
 
   void setOffset(double value) {
@@ -72,6 +80,28 @@ class ReaderStateController {
       scrollOffset: currentOffset,
       viewportHeight: recentViewportHeight,
     );
+    // current page event
+    final currentPage = getCurrentPage();
+    if (currentPage != null && page != currentPage) {
+      page = currentPage;
+      _con.add(PageChanged(page));
+    }
+
+    // scrollbar
+    final scrollInfo = getScrollbarInfo();
+    if (scrollInfo != null) {
+      final current = scrollbarInfo;
+      // current ရှိနေရင်ပေါ့
+      if (current != null && current.thumbTop != scrollInfo.thumbTop) {
+        scrollbarInfo = scrollInfo;
+        _con.add(ScrollbarUiChanged());
+      } else {
+        // မရှိဘူး တိုက်ရိုက်ထည့်
+        scrollbarInfo = scrollInfo;
+        _con.add(ScrollbarUiChanged());
+      }
+    }
+
     _con.add(UpdateVisiblePages());
   }
 
@@ -108,5 +138,63 @@ class ReaderStateController {
     final page = pages.first;
 
     return recentViewportWidth / page.width;
+  }
+
+  int? getCurrentPage() {
+    final pages = visiblePages;
+    if (pages.isEmpty) return null;
+
+    final center = currentOffset + recentViewportHeight / 2;
+
+    PageOffset closest = pages.first;
+    var minDistance = double.infinity;
+
+    for (final page in pages) {
+      final pageCenter = (page.top + page.bottom) / 2;
+      final distance = (pageCenter - center).abs();
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closest = page;
+      }
+    }
+
+    return closest.pageIndex;
+  }
+
+  //**********************Scrollbar**************************************** */
+  void scrollByScrollbar(double dy) {
+    final maxOffset = contentHeight - recentViewportHeight;
+
+    final maxThumbOffset = scrollbarHeight - scrollbarThumbHeight;
+
+    if (maxThumbOffset <= 0) return;
+
+    final delta = dy / maxThumbOffset * maxOffset;
+
+    scrollBy(delta);
+  }
+
+  void setScrollbarHeight(double height) {
+    scrollbarHeight = height;
+  }
+
+  ScrollbarInfo? getScrollbarInfo() {
+    if (contentHeight <= recentViewportHeight || scrollbarHeight <= 0) {
+      return null;
+    }
+
+    final thumbHeight = max(
+      scrollbarThumbHeight,
+      scrollbarHeight * recentViewportHeight / contentHeight,
+    );
+
+    final maxOffset = contentHeight - recentViewportHeight;
+
+    final maxThumbOffset = scrollbarHeight - thumbHeight;
+
+    final thumbTop = (currentOffset / maxOffset) * maxThumbOffset;
+
+    return ScrollbarInfo(thumbTop: thumbTop, thumbHeight: thumbHeight);
   }
 }
