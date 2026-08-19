@@ -18,6 +18,8 @@ class PdfImageGenerator {
     _autoCloseIsolateDuration = autoCloseIsolateDuration;
   }
 
+  int _activeGenerateCount = 0;
+
   /// PDF Page Image Generator
   ///
   /// `targetWidth`=0 -> original size
@@ -34,7 +36,9 @@ class PdfImageGenerator {
   }) async {
     final rec = ReceivePort();
     try {
+      _activeGenerateCount++;
       _autoCloseTimer?.cancel();
+      _autoCloseTimer = null;
 
       await _initialized();
 
@@ -68,6 +72,12 @@ class PdfImageGenerator {
       return Err(e.toString());
     } finally {
       rec.close();
+
+      _activeGenerateCount--;
+
+      if (_activeGenerateCount == 0) {
+        _autoClose();
+      }
     }
   }
 
@@ -103,8 +113,16 @@ class PdfImageGenerator {
   // timer
   Timer? _autoCloseTimer;
   void _autoClose() {
+    _autoCloseTimer?.cancel();
+
+    if (_activeGenerateCount != 0) {
+      return;
+    }
+
     _autoCloseTimer = Timer(_autoCloseIsolateDuration, () {
-      close();
+      if (_activeGenerateCount == 0) {
+        close();
+      }
     });
   }
 
