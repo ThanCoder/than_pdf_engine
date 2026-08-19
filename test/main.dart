@@ -67,6 +67,8 @@ void genOne() {
   final path =
       '/home/thancoder/Documents/pdf/၁၉၆၈ခုနှစ်တွင်အင်မော်တယ်တစ်ပါးဖြစ်လာခြင်း_Book_1_3.pdf';
   final doc = PdfDocumentFile();
+  // final doc = PdfDocumentMem();
+  // final doc = PdfDocumentMem64();
 
   final docResult = doc.open(path);
   if (docResult.isErr) {
