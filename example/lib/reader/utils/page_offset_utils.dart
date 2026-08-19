@@ -64,6 +64,7 @@ class PageOffsetUtils {
     return pages.sublist(start, end);
   }
 
+  /// binary search
   static int findFirstVisiblePage(List<PageOffset> pages, double viewportTop) {
     var low = 0;
     var high = pages.length - 1;

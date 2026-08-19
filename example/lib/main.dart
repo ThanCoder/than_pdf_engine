@@ -17,40 +17,41 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _content(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          try {
-            if (!await ThanPkg.platform.isStoragePermissionGranted()) {
-              await ThanPkg.platform.requestStoragePermission();
-            }
-            // final g = PdfThumbnailGenerator.instance;
+    return Scaffold(body: _content(), floatingActionButton: button());
+  }
 
-            // final dir = Directory('/home/thancoder/Documents/Docs');
-            // final outDir = Directory('${dir.path}/thumbnails');
-            // if (!outDir.existsSync()) {
-            //   outDir.createSync(recursive: false);
-            // }
-            // for (var file in dir.listSync(followLinks: false)) {
-            //   final name = file.getName();
-            //   if (!name.endsWith('.pdf')) continue;
-            //   print('$name: Starting...');
-
-            //   final res = await g.generate(
-            //     file.path,
-            //     '${outDir.path}/$name.jpg',
-            //     overrideImage: true,
-            //     height: 200,
-            //     width: 200,
-            //   );
-            //   print('$name: $res');
-            // }
-          } catch (e) {
-            debugPrint(e.toString());
+  FloatingActionButton button() {
+    return FloatingActionButton(
+      onPressed: () async {
+        try {
+          if (!await ThanPkg.platform.isStoragePermissionGranted()) {
+            await ThanPkg.platform.requestStoragePermission();
           }
-        },
-      ),
+          // final g = PdfThumbnailGenerator.instance;
+
+          // final dir = Directory('/home/thancoder/Documents/Docs');
+          // final outDir = Directory('${dir.path}/thumbnails');
+          // if (!outDir.existsSync()) {
+          //   outDir.createSync(recursive: false);
+          // }
+          // for (var file in dir.listSync(followLinks: false)) {
+          //   final name = file.getName();
+          //   if (!name.endsWith('.pdf')) continue;
+          //   print('$name: Starting...');
+
+          //   final res = await g.generate(
+          //     file.path,
+          //     '${outDir.path}/$name.jpg',
+          //     overrideImage: true,
+          //     height: 200,
+          //     width: 200,
+          //   );
+          //   print('$name: $res');
+          // }
+        } catch (e) {
+          debugPrint(e.toString());
+        }
+      },
     );
   }
 
@@ -65,18 +66,15 @@ class _MyAppState extends State<MyApp> {
           ),
           TextButton(
             child: Text('Test 1'),
-            onPressed: () =>
-                goPage('/home/thancoder/Documents/pdf/test1.pdf'),
+            onPressed: () => goPage('/home/thancoder/Documents/pdf/test1.pdf'),
           ),
           TextButton(
             child: Text('Test 2'),
-            onPressed: () =>
-                goPage('/home/thancoder/Documents/pdf/test2.pdf'),
+            onPressed: () => goPage('/home/thancoder/Documents/pdf/test2.pdf'),
           ),
           TextButton(
             child: Text('Test 3'),
-            onPressed: () =>
-                goPage('/home/thancoder/Documents/pdf/test3.pdf'),
+            onPressed: () => goPage('/home/thancoder/Documents/pdf/test3.pdf'),
           ),
           TextButton(
             onPressed: () => goPage('/storage/emulated/0/test.pdf'),

@@ -34,7 +34,19 @@ class ZoomChanged extends ReaderEvent {
   const ZoomChanged(this.zoom);
 }
 
+class ScaleChanged extends ReaderEvent {
+  const ScaleChanged();
+}
+
 class ScrollbarUiChanged extends ReaderEvent {}
+
+class MobileScaleStart extends ReaderEvent {}
+
+class MobileScaleEnd extends ReaderEvent {}
+
+class ScrollEnd extends ReaderEvent {}
+
+class MobileScaleChanged extends ReaderEvent {}
 
 class ScrollbarDragEvent extends ReaderEvent {
   final bool scrollbarDragging;

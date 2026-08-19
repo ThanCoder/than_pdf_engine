@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -27,35 +29,67 @@ class ReaderItem extends StatefulWidget {
 class _ReaderItemState extends State<ReaderItem> {
   Uint8List? _oldImage;
   Uint8List? _newImage;
+  StreamSubscription? _subscription;
+  int lastQuality = 0;
+  double lastWidth = 0;
+  double lastHeight = 0;
 
   int _requestId = 0;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _subscription = widget.stateController.stream
+        .where(
+          (e) => e is ZoomChanged || e is MobileScaleChanged || e is ScrollEnd,
+        )
+        .listen((event) {
+          if (lastQuality == 90 &&
+              lastWidth == widget.offset.width &&
+              lastHeight == widget.offset.height) {
+            return;
+          }
+          print(
+            'Dev: need to changed image cache: page: ${widget.offset.pageIndex} - $event',
+          );
+          _reloadForNewResolution(quality: 90);
+        });
+    if (lastQuality == 90 &&
+        lastWidth == widget.offset.width &&
+        lastHeight == widget.offset.height) {
+      return;
+    }
+    _load(quality: 20);
   }
 
   @override
-  void didUpdateWidget(covariant ReaderItem oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.offset.width != widget.offset.width ||
-        oldWidget.offset.height != widget.offset.height) {
-      _load();
-    }
+  void dispose() {
+    _subscription?.cancel(); // Memory leak မဖြစ်အောင် Stream ခုတ်ပေးပါ
+    super.dispose();
   }
 
-  Future<void> _load() async {
+  // Zoom ပြောင်းသွားပါက လက်ရှိ ပုံဟောင်းကို ခေတ္တပြထားပြီး Cache ဖျက်ကာ Resolution အသစ် ဆွဲပေးမည့် Function
+  void _reloadForNewResolution({required int quality}) {
+    // လက်ရှိ Image ကို Old Image အဖြစ် ခေတ္တ ထိန်းထားပေးပါမည် (Screen ပေါ်တွင် ဝါးမသွားစေရန်)
+    if (_newImage != null) {
+      _oldImage = _newImage;
+      _newImage = null;
+    }
+    widget.imageCache.remove(widget.offset.pageIndex);
+    // widget.imageCache.clear();
+    _load(quality: quality);
+  }
+
+  Future<void> _load({required int quality}) async {
     final width = widget.offset.width;
     final height = widget.offset.height;
     final pageIndex = widget.offset.pageIndex;
 
-    final cached = widget.imageCache.get(
-      pageIndex,
-      width: width,
-      height: height,
-    );
+    if (lastQuality == quality && lastWidth == width && lastHeight == height) {
+      return;
+    }
+
+    final cached = widget.imageCache.get(pageIndex);
 
     if (cached != null) {
       if (!mounted) return;
@@ -72,7 +106,7 @@ class _ReaderItemState extends State<ReaderItem> {
 
     final res = await widget.worker.getImage(
       pageIndex,
-      quality: 90,
+      quality: quality,
       targetHeight: height.toInt(),
       targetWidth: width.toInt(),
     );
@@ -83,7 +117,11 @@ class _ReaderItemState extends State<ReaderItem> {
 
     final image = res.unwrap();
 
-    widget.imageCache.put(pageIndex, image, width: width, height: height);
+    lastQuality = quality;
+    lastWidth = width;
+    lastHeight = height;
+
+    widget.imageCache.put(pageIndex, image);
 
     if (!mounted || requestId != _requestId) {
       return;
@@ -109,7 +147,8 @@ class _ReaderItemState extends State<ReaderItem> {
     final newImage = _newImage;
 
     if (oldImage == null && newImage == null) {
-      return const Icon(Icons.image_not_supported_rounded, size: 300);
+      final iconSize = min(widget.offset.width, widget.offset.height) * 0.4;
+      return Icon(Icons.image_not_supported_rounded, size: iconSize);
     }
 
     return Stack(
@@ -119,15 +158,7 @@ class _ReaderItemState extends State<ReaderItem> {
           Image.memory(oldImage, fit: BoxFit.fill, gaplessPlayback: true),
 
         if (newImage != null)
-          AnimatedOpacity(
-            opacity: 1,
-            duration: const Duration(milliseconds: 150),
-            child: Image.memory(
-              newImage,
-              fit: BoxFit.fill,
-              gaplessPlayback: true,
-            ),
-          ),
+          Image.memory(newImage, fit: BoxFit.fill, gaplessPlayback: true),
       ],
     );
   }

@@ -38,17 +38,24 @@ class ReaderScrollbar extends StatelessWidget {
               controller.addEvent(ScrollbarDragEvent(false));
             },
             onVerticalDragUpdate: (details) {
+              final info = controller.scrollbarInfo;
+              if (info == null) return;
+
               final contentHeight = controller.contentHeight;
               final viewportHeight = controller.recentViewportHeight;
+              final scrollbarHeight =
+                  controller.scrollbarHeight; // သို့မဟုတ် viewportHeight
 
+              // Max offsets
               final maxOffset = contentHeight - viewportHeight;
 
-              final thumbHeight =
-                  viewportHeight * viewportHeight / contentHeight;
+              // 🟢 CORRECT: info.thumbHeight ကို တိုက်ရိုက်သုံးရပါမည်
+              final maxThumbOffset = scrollbarHeight - info.thumbHeight;
 
-              final maxThumbOffset = viewportHeight - thumbHeight;
+              if (maxThumbOffset <= 0) return;
 
-              final delta = details.delta.dy / maxThumbOffset * maxOffset;
+              // Real Drag Delta Ratio
+              final delta = (details.delta.dy / maxThumbOffset) * maxOffset;
 
               controller.scrollBy(delta);
             },
