@@ -16,7 +16,7 @@ class ReaderScrollbar extends StatelessWidget {
     return StreamBuilder(
       stream: controller.stream.whereType<ScrollbarUiChanged>(),
       builder: (context, snapshot) {
-        final info = controller.scrollbarInfo;
+        final info = controller.state.scrollbarInfo;
 
         if (info == null) {
           return Positioned(child: SizedBox.shrink());
@@ -29,22 +29,22 @@ class ReaderScrollbar extends StatelessWidget {
           height: info.thumbHeight,
           child: GestureDetector(
             onVerticalDragStart: (_) {
-              controller.scrollbarDragging = true;
+              controller.state.scrollbarDragging = true;
               controller.addEvent(ScrollbarDragEvent(true));
               animationController.stop();
             },
             onVerticalDragEnd: (details) {
-              controller.scrollbarDragging = false;
+              controller.state.scrollbarDragging = false;
               controller.addEvent(ScrollbarDragEvent(false));
             },
             onVerticalDragUpdate: (details) {
-              final info = controller.scrollbarInfo;
+              final info = controller.state.scrollbarInfo;
               if (info == null) return;
 
               final contentHeight = controller.contentHeight;
-              final viewportHeight = controller.recentViewportHeight;
+              final viewportHeight = controller.state.recentViewportHeight;
               final scrollbarHeight =
-                  controller.scrollbarHeight; // သို့မဟုတ် viewportHeight
+                  controller.state.scrollbarHeight; // သို့မဟုတ် viewportHeight
 
               // Max offsets
               final maxOffset = contentHeight - viewportHeight;

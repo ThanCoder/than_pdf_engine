@@ -1,5 +1,5 @@
 import 'dart:math';
-';
+import 'package:dart_core_extensions/dart_core_extensions.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -37,11 +37,11 @@ class _PdfReaderState extends State<PdfReader>
   }
 
   void _fling(double velocity) {
-    animationController.value = stateController.currentOffset;
+    animationController.value = stateController.state.currentOffset;
 
     final simulation = FrictionSimulation(
       0.135,
-      stateController.currentOffset,
+      stateController.state.currentOffset,
       velocity,
     );
 
@@ -186,9 +186,9 @@ class _PdfReaderState extends State<PdfReader>
       // print('offset page: ${stateController.visiblePages.first}');
       final list = <Widget>[];
       for (var p in stateController.visiblePages) {
-        final top = p.top - stateController.currentOffset;
+        final top = p.top - stateController.state.currentOffset;
         final defaultCenterLeft = (constraints.maxWidth - p.width) / 2;
-        final left = defaultCenterLeft + stateController.currentOffsetX;
+        final left = defaultCenterLeft + stateController.state.currentOffsetX;
 
         list.add(
           Positioned(
@@ -202,7 +202,7 @@ class _PdfReaderState extends State<PdfReader>
                 (e) => e is ScrollbarDragEvent || e is MobileScaleEnd,
               ),
               builder: (context, asyncSnapshot) {
-                if (stateController.scrollbarDragging) {
+                if (stateController.state.scrollbarDragging) {
                   final iconSize = min(p.width, p.height) * 0.4;
                   return Icon(
                     Icons.image_not_supported_outlined,
@@ -213,7 +213,7 @@ class _PdfReaderState extends State<PdfReader>
                   offset: p,
                   stateController: stateController,
                   worker: worker,
-                  imageCache: stateController.imageCache,
+                  imageCache: stateController.state.imageCache,
                 );
               },
             ),
@@ -252,7 +252,7 @@ class _PdfReaderState extends State<PdfReader>
                       stateController.jumpPageIndex(150);
                     },
                     child: Text(
-                      '${stateController.page}/${stateController.totalPage}',
+                      '${stateController.state.page}/${stateController.state.totalPage}',
                     ),
                   );
                 },
@@ -264,7 +264,7 @@ class _PdfReaderState extends State<PdfReader>
                   foregroundColor: col.onSurface,
                 ),
                 onPressed: () {
-                  stateController.setZoom(stateController.zoom - 0.1);
+                  stateController.setZoom(stateController.state.zoom - 0.1);
                 },
                 icon: Icon(Icons.zoom_out),
               ),
@@ -274,7 +274,7 @@ class _PdfReaderState extends State<PdfReader>
                   foregroundColor: col.onSurface,
                 ),
                 onPressed: () {
-                  stateController.setZoom(stateController.zoom + 0.1);
+                  stateController.setZoom(stateController.state.zoom + 0.1);
                 },
                 icon: Icon(Icons.zoom_in),
               ),
@@ -282,18 +282,18 @@ class _PdfReaderState extends State<PdfReader>
                 stream: stateController.stream.whereType<ZoomChanged>(),
                 builder: (context, asyncSnapshot) {
                   return Text(
-                    'Zoom: ${stateController.zoom.toStringAsFixed(4)}',
+                    'Zoom: ${stateController.state.zoom.toStringAsFixed(4)}',
                   );
                 },
               ),
               StreamBuilder(
-                stream: stateController.imageCache.stream,
+                stream: stateController.state.imageCache.stream,
                 builder: (context, asyncSnapshot) {
                   return Row(
                     children: [
-                      Text('C len: ${stateController.imageCache.len}'),
+                      Text('C len: ${stateController.state.imageCache.len}'),
                       Text(
-                        'C Size: ${stateController.imageCache.size.toFileSizeLabel()}',
+                        'C Size: ${stateController.state.imageCache.size.toFileSizeLabel()}',
                       ),
                     ],
                   );

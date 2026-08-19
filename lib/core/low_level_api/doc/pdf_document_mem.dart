@@ -1,4 +1,4 @@
-part of 'pdf_document.dart';
+part of '../pdf_document.dart';
 
 class PdfDocumentMem extends IPdfDocument with PdfDocExtraMixin {
   @override
@@ -16,21 +16,15 @@ class PdfDocumentMem extends IPdfDocument with PdfDocExtraMixin {
   ///Usage
   ///
   ///```dart
-  /// final openStatus = doc.open();
-  ///
-  /// openStatus.unwrapOr(false);
-  ///
-  ///  final openStatus = doc.open().fold(
-  ///   ok: (value) => value,
-  ///   err: (error) {
-  ///     print('error: $error');
-  ///     return false;
-  ///   },
-  // );
+  ///  final docResult = doc.open(bytes);
+  ///   if (docResult.isErr) {
+  ///     print(docResult.unwrapError());
+  ///     return;
+  ///   }
   ///```
   ///
   Result<bool, PdfiumStatus> open(Uint8List data, {String? password}) {
-    FPDF_InitLibrary();
+    bindings.FPDF_InitLibrary();
     // PDF data အတွက် native memory allocate
     _data = malloc<UnsignedChar>(data.length);
     _dataSize = data.length;
@@ -43,14 +37,14 @@ class PdfDocumentMem extends IPdfDocument with PdfDocExtraMixin {
     }
 
     // _doc = FPDF_LoadDocument(_path.cast<Char>(), _password.cast<Char>());
-    _doc = FPDF_LoadMemDocument(
+    _doc = bindings.FPDF_LoadMemDocument(
       _data!.cast<Void>(),
       _dataSize,
       _password.cast<Char>(),
     );
 
     if (_doc == nullptr) {
-      final status = PdfiumStatus.fromCode(FPDF_GetLastError());
+      final status = PdfiumStatus.fromCode(bindings.FPDF_GetLastError());
 
       malloc.free(_data!);
       _data = nullptr;
@@ -72,7 +66,7 @@ class PdfDocumentMem extends IPdfDocument with PdfDocExtraMixin {
   /// free memory
   void close() {
     if (_doc != nullptr) {
-      FPDF_CloseDocument(_doc);
+      bindings.FPDF_CloseDocument(_doc);
       _doc = nullptr;
     }
 
@@ -86,6 +80,6 @@ class PdfDocumentMem extends IPdfDocument with PdfDocExtraMixin {
     }
     _isOpened = false;
 
-    FPDF_DestroyLibrary();
+    bindings.FPDF_DestroyLibrary();
   }
 }

@@ -49,9 +49,9 @@ class _ReaderItemState extends State<ReaderItem> {
               lastHeight == widget.offset.height) {
             return;
           }
-          print(
-            'Dev: need to changed image cache: page: ${widget.offset.pageIndex} - $event',
-          );
+          // print(
+          //   'Dev: need to changed image cache: page: ${widget.offset.pageIndex} - $event',
+          // );
           _reloadForNewResolution(quality: 90);
         });
     if (lastQuality == 90 &&

@@ -1,41 +1,65 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-part of 'pdf_document.dart';
+part of '../pdf_document.dart';
+
+enum PageRenderImageType {
+  jpg,
+  png,
+  webp;
+
+  static PageRenderImageType fromValue(String val) {
+    return values.firstWhere((e) => e.name == val, orElse: () => jpg);
+  }
+}
 
 mixin PdfPageImageMixin on IPdfPage {
-  /// Save Png File
-  Result<bool, String> saveJpgImageFile(
+  /// Save File
+  ///
+  /// enum PageRenderImageType { jpg, png, webp }
+  ///
+  /// default -> `original size`
+  ///
+  /// `targetWidth`=0 `targetHeight`=0
+  ///```dart
+  ///final res = page.saveImageFile('thumb.png');
+  ///
+  /// if (res.isErr) {
+  ///   print('Error: ${res.unwrapError()}');
+  ///   return;
+  /// }
+  /// print('Saved');
+  /// ```
+
+  Result<bool, String> saveImageFile(
     String path, {
     int targetWidth = 0,
     int targetHeight = 0,
     int quality = 100,
+    PageRenderImageType renderImageType = .jpg,
   }) {
-    final pixels = renderPage(
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
-    );
-    if (pixels.isErr) {
-      return Err(pixels.unwrapError());
-    }
-    final res = pixels.unwrap();
-    final pngBytes = img.encodeJpg(
+    final res = renderPageImage(
+      renderImageType: renderImageType,
       quality: quality,
-      .fromBytes(
-        width: res.width,
-        height: res.height,
-        bytes: res.pixels.buffer,
-        order: .bgra,
-      ),
+      targetHeight: targetHeight,
+      targetWidth: targetWidth,
     );
-    File(path).writeAsBytesSync(pngBytes);
+    if (res.isErr) {
+      return Err(res.unwrapError());
+    }
+    File(path).writeAsBytesSync(res.unwrap());
 
     return Ok(true);
   }
 
-  /// Save Png File
-  Result<bool, String> savePngImageFile(
-    String path, {
+  /// Render Page Image
+  ///
+  /// default -> `original size`
+  ///
+  /// `targetWidth`=0 `targetHeight`=0
+  Result<Uint8List, String> renderPageImage({
     int targetWidth = 0,
     int targetHeight = 0,
+    int quality = 100,
+    PageRenderImageType renderImageType = .jpg,
   }) {
     final pixels = renderPage(
       targetWidth: targetWidth,
@@ -45,17 +69,42 @@ mixin PdfPageImageMixin on IPdfPage {
       return Err(pixels.unwrapError());
     }
     final res = pixels.unwrap();
-    final pngBytes = img.encodePng(
-      .fromBytes(
-        width: res.width,
-        height: res.height,
-        bytes: res.pixels.buffer,
-        order: .bgra,
-      ),
-    );
-    File(path).writeAsBytesSync(pngBytes);
+    late Uint8List bytes;
 
-    return Ok(true);
+    try {
+      if (renderImageType == .jpg) {
+        bytes = img.encodeJpg(
+          quality: quality,
+          .fromBytes(
+            width: res.width,
+            height: res.height,
+            bytes: res.pixels.buffer,
+            order: .bgra,
+          ),
+        );
+      } else if (renderImageType == .png) {
+        bytes = img.encodePng(
+          .fromBytes(
+            width: res.width,
+            height: res.height,
+            bytes: res.pixels.buffer,
+            order: .bgra,
+          ),
+        );
+      } else if (renderImageType == .webp) {
+        bytes = img.encodeWebP(
+          .fromBytes(
+            width: res.width,
+            height: res.height,
+            bytes: res.pixels.buffer,
+            order: .bgra,
+          ),
+        );
+      }
+      return Ok(bytes);
+    } catch (e) {
+      return Err(e.toString());
+    }
   }
 
   ///
@@ -63,6 +112,10 @@ mixin PdfPageImageMixin on IPdfPage {
   /// pixels data
   ///
   /// ChannelOrder -> BGRA
+  ///
+  /// default -> `original size`
+  ///
+  /// `targetWidth`=0 `targetHeight`=0
   ///
   /// ```dart
   ///  final pngBytes = img.encodePng(
@@ -87,7 +140,7 @@ mixin PdfPageImageMixin on IPdfPage {
     }
 
     try {
-      FPDFBitmap_FillRect(
+      bindings.FPDFBitmap_FillRect(
         bitmap.unwrap().bitmapPtr,
         0,
         0,
@@ -95,7 +148,7 @@ mixin PdfPageImageMixin on IPdfPage {
         bitmap.unwrap().height,
         0xFFFFFFFF,
       );
-      FPDF_RenderPageBitmap(
+      bindings.FPDF_RenderPageBitmap(
         bitmap.unwrap().bitmapPtr,
         _page,
         0,
@@ -106,8 +159,8 @@ mixin PdfPageImageMixin on IPdfPage {
         0,
       );
 
-      final buffer = FPDFBitmap_GetBuffer(bitmap.unwrap().bitmapPtr);
-      final stride = FPDFBitmap_GetStride(bitmap.unwrap().bitmapPtr);
+      final buffer = bindings.FPDFBitmap_GetBuffer(bitmap.unwrap().bitmapPtr);
+      final stride = bindings.FPDFBitmap_GetStride(bitmap.unwrap().bitmapPtr);
 
       if (buffer == nullptr || stride <= 0) {
         throw StateError('Failed to get bitmap data');
@@ -137,10 +190,14 @@ mixin PdfPageImageMixin on IPdfPage {
 
   /// free low level api
   void freeLowLevelBitmap(PdfBitmap bitmap) {
-    FPDFBitmap_Destroy(bitmap.bitmapPtr);
+    bindings.FPDFBitmap_Destroy(bitmap.bitmapPtr);
   }
 
-  /// Need To Free
+  /// Low Level Bitmap
+  ///
+  /// default -> `original size`
+  ///
+  /// `targetWidth`=0 `targetHeight`=0
   ///
   /// ```dart
   ///final bitmap = createLowLevelBitmap(
@@ -151,14 +208,15 @@ mixin PdfPageImageMixin on IPdfPage {
   ///   return Err(bitmap.unwrapError());
   /// }
   ///
+  /// //free memory
   /// freeLowLevelBitmap(bitmap.unwrap());
   /// ```
   Result<PdfBitmap, String> createLowLevelBitmap({
     int targetWidth = 0,
     int targetHeight = 0,
   }) {
-    final pageWidth = FPDF_GetPageWidth(_page);
-    final pageHeight = FPDF_GetPageHeight(_page);
+    final pageWidth = bindings.FPDF_GetPageWidth(_page);
+    final pageHeight = bindings.FPDF_GetPageHeight(_page);
     int width;
     int height;
 
@@ -176,7 +234,7 @@ mixin PdfPageImageMixin on IPdfPage {
       height = pageHeight.ceil();
     }
     // print('[createLowLevelBitmap] width: $width - height: $height');
-    final bitmap = FPDFBitmap_Create(width, height, 1);
+    final bitmap = bindings.FPDFBitmap_Create(width, height, 1);
     if (bitmap == nullptr) {
       return Err('Failed to create bitmap');
     }

@@ -11,6 +11,7 @@ class MyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('PDF: ${path.split('/').last}')),
       body: PdfReader(path: path),
+      // floatingActionButton: Icon(Icons.home),
     );
   }
 }

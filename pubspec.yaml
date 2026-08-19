@@ -14,6 +14,7 @@ environment:
 dependencies:
   ffi: ^2.1.4
   image: ^4.9.1
+  pdfium_dart: ^0.2.5
   
 dev_dependencies:
   ffigen: ^20.1.1

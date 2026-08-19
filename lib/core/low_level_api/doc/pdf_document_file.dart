@@ -1,4 +1,4 @@
-part of 'pdf_document.dart';
+part of '../pdf_document.dart';
 
 class PdfDocumentFile extends IPdfDocument with PdfDocExtraMixin {
   @override
@@ -12,31 +12,30 @@ class PdfDocumentFile extends IPdfDocument with PdfDocExtraMixin {
   Pointer _path = nullptr;
   Pointer _password = nullptr;
 
+  /// if `failed` -> it will call auto close
+  ///
   ///Usage
   ///
   ///```dart
-  /// final openStatus = doc.open();
-  ///
-  /// openStatus.unwrapOr(false);
-  ///
-  ///  final openStatus = doc.open().fold(
-  ///   ok: (value) => value,
-  ///   err: (error) {
-  ///     print('error: $error');
-  ///     return false;
-  ///   },
-  // );
+  ///  final docResult = doc.open(path);
+  ///   if (docResult.isErr) {
+  ///     print(docResult.unwrapError());
+  ///     return;
+  ///   }
   ///```
   ///
   Result<bool, PdfiumStatus> open(String path, {String? password}) {
-    FPDF_InitLibrary();
+    bindings.FPDF_InitLibrary();
+    // final config = calloc<FPDF_LIBRARY_CONFIG_>();
+    // config.ref.m_v8EmbedderSlot
+    // FPDF_InitLibraryWithConfig(config)
 
     _path = path.toNativeUtf8();
     if (password != null) {
       _password = password.toNativeUtf8();
     }
 
-    _doc = FPDF_LoadDocument(_path.cast<Char>(), _password.cast<Char>());
+    _doc = bindings.FPDF_LoadDocument(_path.cast<Char>(), _password.cast<Char>());
 
     if (_doc == nullptr) {
       if (_path != nullptr) {
@@ -48,7 +47,7 @@ class PdfDocumentFile extends IPdfDocument with PdfDocExtraMixin {
         malloc.free(_password);
         _password = nullptr;
       }
-      final status = PdfiumStatus.fromCode(FPDF_GetLastError());
+      final status = PdfiumStatus.fromCode(bindings.FPDF_GetLastError());
 
       return Err(status);
     }
@@ -59,7 +58,7 @@ class PdfDocumentFile extends IPdfDocument with PdfDocExtraMixin {
   /// Page Close
   ///
   /// free memory
-  void close() {
+  void close({bool destroyPdfiumLib = false}) {
     _isOpened = false;
     if (_path != nullptr) {
       malloc.free(_path);
@@ -70,10 +69,11 @@ class PdfDocumentFile extends IPdfDocument with PdfDocExtraMixin {
       _password = nullptr;
     }
     if (_doc != nullptr) {
-      FPDF_CloseDocument(_doc);
+      bindings.FPDF_CloseDocument(_doc);
       _doc = nullptr;
     }
-
-    FPDF_DestroyLibrary();
+    if (destroyPdfiumLib) {
+      bindings.FPDF_DestroyLibrary();
+    }
   }
 }

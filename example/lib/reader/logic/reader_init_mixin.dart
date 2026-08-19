@@ -42,17 +42,17 @@ mixin ReaderInitMixin {
   }
 
   void calcualteOffset() {
-    stateController.totalOffset = stateController.pages.fold(
+    stateController.state.totalOffset = stateController.pages.fold(
       0,
       (prev, ele) => prev + ele.height,
     );
     stateController.pageOffsets = PageOffsetUtils.calculatePageOffsets(
       stateController.pages,
-      zoom: stateController.zoom,
+      zoom: stateController.state.zoom,
     );
 
     if (stateController.pages.isNotEmpty) {
-      stateController.totalPage = stateController.pages.length - 1;
+      stateController.state.totalPage = stateController.pages.length - 1;
     }
 
     stateController.addEvent(ReaderLoaded());
