@@ -12,5 +12,5 @@ export 'core/high_level_api/index.dart';
 
 // const String testPath = '/home/thancoder/projects/dart_plugins/than_pdf_engine/.dart_tool/lib/libpdfium.so';
 
-final dylib = DynamicLibrary.open('libpdfium.so');
-final bindings = ThanPdfEngineBindings(dylib);
+final _dylib = DynamicLibrary.open('libpdfium.so');
+final bindings = ThanPdfEngineBindings(_dylib);
