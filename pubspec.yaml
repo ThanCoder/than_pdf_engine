@@ -1,6 +1,6 @@
 name: than_pdf_engine
 description: "than_pdf_engine -> dart package.wrapper cpp langage.pdfium + stb_image_write ."
-version: 1.0.0
+version: 1.1.0
 repository: https://github.com/ThanCoder/than_pdf_engine.git
 
 

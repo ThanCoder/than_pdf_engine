@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:than_pdf_engine/core/low_level_api/pdf_document.dart';
@@ -25,6 +26,8 @@ class PdfImageGenerator {
   /// `targetWidth`=0 -> original size
   ///
   /// `targetHeight`=0 -> original size
+  ///
+  /// `overrideImage`=false && if `exists` ?  `return`=true
   Future<Result<bool, String>> generate(
     String pdfPath, {
     required String outPath,
@@ -33,7 +36,12 @@ class PdfImageGenerator {
     PageRenderImageType renderImageType = .jpg,
     int targetWidth = 300,
     int targetHeight = 300,
+    bool overrideImage = true,
   }) async {
+    final out = File(outPath);
+    if (!overrideImage && out.existsSync()) {
+      return Ok(true);
+    }
     final rec = ReceivePort();
     try {
       _activeGenerateCount++;
