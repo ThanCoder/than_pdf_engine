@@ -1,6 +1,11 @@
-# 1.1.0
+# 1.2.0
+* Removed `bindings.FPDF_DestroyLibrary()` from `PdfImageGenerator` and `PdfReaderWorker` to prevent conflicts when using multiple isolates.
+
+## 1.1.0
+
 * Fixed `PdfImageGenerator`
-# 1.0.0
+
+## 1.0.0
 
 ### Previous Architecture
 

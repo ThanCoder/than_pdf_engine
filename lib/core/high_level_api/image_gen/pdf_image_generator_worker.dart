@@ -33,7 +33,7 @@ Future<void> _pdfImageGeneratorWorker(SendPort port) async {
 
     //close isolate
     if (command == .close) {
-      bindings.FPDF_DestroyLibrary();
+      // bindings.FPDF_DestroyLibrary();
       rec.close();
       reply.send(true);
       return;

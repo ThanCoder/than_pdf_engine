@@ -44,7 +44,7 @@ Future<void> _backgroundWorker((SendPort, String) args) async {
 
     if (command == .close) {
       doc.close();
-      bindings.FPDF_DestroyLibrary();
+      // bindings.FPDF_DestroyLibrary();
       reply.send(true);
       rec.close();
       return;
